@@ -1,4 +1,7 @@
-﻿using Domain.Contracts;
+﻿using Application.ServiceAbstractions;
+using Application.Services;
+using Domain;
+using Domain.Contracts;
 using Domain.Entites;
 using Infrastructure;
 using Infrastructure.context;
@@ -18,6 +21,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DevelopmentConnectionString"));
 });
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
 builder.Services.AddIdentity<User, IdentityRole>(opt =>
 {
     opt.Password.RequireDigit = true;
