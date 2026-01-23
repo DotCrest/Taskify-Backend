@@ -1,5 +1,10 @@
-﻿using Infrastructure.context;
+﻿using Domain.Contracts;
+using Domain.Entites;
+using Infrastructure;
+using Infrastructure.context;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +18,27 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DevelopmentConnectionString"));
 });
+builder.Services.AddIdentity<User, IdentityRole>(opt =>
+{
+    opt.Password.RequireDigit = true;
+    opt.Password.RequireLowercase = true;
+    opt.Password.RequireUppercase = true;
+    opt.Password.RequireNonAlphanumeric = true;
+    opt.Password.RequiredLength = 8;
+    opt.User.RequireUniqueEmail = true;
+    opt.Lockout.MaxFailedAccessAttempts = 5;
+    opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    opt.Lockout.AllowedForNewUsers = true;
+}).AddEntityFrameworkStores<ApplicationDbContext>()
+.AddRoles<IdentityRole>();
+builder.Services.AddScoped<IDataSeeding, DataSeeding>();
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dataSeeding = scope.ServiceProvider.GetRequiredService<IDataSeeding>();
+    await dataSeeding.SeedDataAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -23,7 +48,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
