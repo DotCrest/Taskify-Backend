@@ -1,8 +1,12 @@
-﻿using Application.Dtos;
+﻿using Application.Common.Errors;
+using Application.Dtos;
 using Application.ServiceAbstractions;
+using Application.Shared;
+using Application.Shared.Errors;
 using Domain;
 using Domain.Entites;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -17,28 +21,26 @@ namespace Application.Services
 {
     public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options) : IAuthenticationService
     {
-        public async Task<AuthResponseDto> Login(LoginDto loginDto)
+        public async Task<Result<AuthResponseDto>> Login(LoginDto loginDto)
         {
 
 
             var user = await _userManager.FindByEmailAsync(loginDto.Email);
             if (user == null || !await _userManager.CheckPasswordAsync(user, loginDto.Password))
             {
-                return new AuthResponseDto()
-                {
-                    Message = "Invalid Email Or Password"
-                    ,
-                    IsAuthenticated = false
-                };
+                //return new AuthResponseDto()
+                //{
+                //    Message = "Invalid Email Or Password"
+                //    ,
+                //    IsAuthenticated = false
+                //};
+                return Result<AuthResponseDto>.Failure(AuthErrors.InvalidCredentials);
+
 
             }
             if (await _userManager.IsLockedOutAsync(user))
             {
-                return new AuthResponseDto()
-                {
-                    Message = "Account Is Locked duo to many failed to many attemps",
-                    IsAuthenticated = false
-                };
+                return Result<AuthResponseDto>.Failure(AuthErrors.UserLockedOut);
 
             }
             var roles = await _userManager.GetRolesAsync(user);
@@ -51,30 +53,23 @@ namespace Application.Services
             authResponse.Email = user.Email;
             authResponse.Roles = roles.ToList();
 
-            return authResponse;
+            return Result<AuthResponseDto>.Success(authResponse);
 
         }
 
-        public async Task<AuthResponseDto> Register(RegisterDto registerDto)
+        public async Task<Result<AuthResponseDto>> Register(RegisterDto registerDto)
         {
-            //var authResponse = new AuthResponseDto();
+
             if (await _userManager.FindByEmailAsync(registerDto.Email) is not null)
             {
-                return new AuthResponseDto()
-                {
-                    Message = "Email is already in use please chose another email",
-                    IsAuthenticated = false
-                };
 
+                return Result<AuthResponseDto>.Failure(AuthErrors.EmailAlreadyExsists);
 
             }
             if (await _userManager.FindByNameAsync(registerDto.UserName) is not null)
             {
-                return new AuthResponseDto()
-                {
-                    Message = "Username is already in use please chose another username",
-                    IsAuthenticated = false
-                };
+                return Result<AuthResponseDto>.Failure(AuthErrors.UsernameAlreadyExsists);
+
 
             }
 
@@ -89,12 +84,15 @@ namespace Application.Services
             var result = await _userManager.CreateAsync(user, registerDto.Password);
             if (!result.Succeeded)
             {
-                //Some exception
+
+                return Result<AuthResponseDto>
+                    .Failure(result.Errors.Select(x => new Error(x.Code,x.Description)).ToList());
             }
-            var roles = await _userManager.AddToRoleAsync(user,"User");
+            var roles = await _userManager.AddToRoleAsync(user, "User");
             var jwtToken = await CreateTokenAsync(user);
-            return new AuthResponseDto()
+            var authRespons = new AuthResponseDto()
             {
+
                 IsAuthenticated = true,
                 Token = jwtToken,
                 ExpiresOn = DateTime.UtcNow.AddDays(30),
@@ -103,7 +101,9 @@ namespace Application.Services
                 Message = "User Registered Successfully",
                 Roles = new List<string>() { "User" }
             };
-        
+            return Result<AuthResponseDto>.Success(authRespons);
+
+
         }
         private async Task<string> CreateTokenAsync(User user)
         {
@@ -118,7 +118,6 @@ namespace Application.Services
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
-            //d52ccc5e735ce59f56192e4a06895dfcf35dff6afb44fb56057d510f4d6b4030
             var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtOptions.SecretKey));
             var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
             var token = new JwtSecurityToken(issuer: JwtOptions.Issuer,
@@ -128,5 +127,6 @@ namespace Application.Services
                 expires: DateTime.UtcNow.AddDays(30));
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+      
     }
 }
