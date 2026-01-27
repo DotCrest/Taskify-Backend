@@ -3,19 +3,14 @@ using Application.Dtos;
 using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Errors;
-using Domain;
-using Domain.Entites;
+using Domain.Models;
+using Domain.Options;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Services
 {
@@ -86,7 +81,7 @@ namespace Application.Services
             {
 
                 return Result<AuthResponseDto>
-                    .Failure(result.Errors.Select(x => new Error(x.Code,x.Description)).ToList());
+                    .Failure(result.Errors.Select(x => new Error(x.Code, x.Description)).ToList());
             }
             var roles = await _userManager.AddToRoleAsync(user, "User");
             var jwtToken = await CreateTokenAsync(user);
@@ -127,6 +122,6 @@ namespace Application.Services
                 expires: DateTime.UtcNow.AddDays(30));
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-      
+
     }
 }
