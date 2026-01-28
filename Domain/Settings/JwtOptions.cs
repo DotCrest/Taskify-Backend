@@ -1,7 +1,7 @@
-﻿namespace Domain;
-
-public class JwtOptions
+﻿namespace Domain.Options
 {
+    public class JwtOptions
+    {
 
     public string Issuer { get; set; } = null!;
     public string Audience { get; set; } = null!;

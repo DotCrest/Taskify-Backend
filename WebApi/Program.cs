@@ -1,8 +1,8 @@
 ﻿using Application.ServiceAbstractions;
 using Application.Services;
-using Domain;
 using Domain.Contracts;
-using Domain.Entites;
+using Domain.Models;
+using Domain.Options;
 using Infrastructure;
 using Infrastructure.context;
 using Microsoft.AspNetCore.Identity;
@@ -18,7 +18,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 {
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DevelopmentConnectionString"));
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString"));
 });
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
