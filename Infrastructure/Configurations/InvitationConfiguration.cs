@@ -15,17 +15,19 @@ public class InvitationConfiguration : IEntityTypeConfiguration<Invitation>
             .HasOne(i => i.Sender)
             .WithMany(u => u.SentInvitations)
             .HasForeignKey(i => i.SenderId)
-            .OnDelete(DeleteBehavior.NoAction);
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder
             .HasOne(i => i.Space)
             .WithMany(s => s.Invitations)
             .HasForeignKey(i => i.SpaceId)
             .OnDelete(DeleteBehavior.NoAction);
+
         builder
             .HasOne(i => i.Workspace)
             .WithMany(w => w.Invitations)
-            .HasForeignKey(i => i.WorkspaceId);
+            .HasForeignKey(i => i.WorkspaceId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder
             .Property(i => i.Status)

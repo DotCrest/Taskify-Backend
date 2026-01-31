@@ -11,6 +11,7 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
         builder
             .HasOne(w => w.User)
             .WithMany(u => u.OwnedWorkspaces)
-            .HasForeignKey(w => w.OwnerId);
+            .HasForeignKey(w => w.OwnerId)
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }

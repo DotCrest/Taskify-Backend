@@ -1,8 +1,6 @@
-﻿using Domain.Contracts;
+﻿namespace Domain.Models;
 
-namespace Domain.Models;
-
-public class Quest : ISoftDelete
+public class Quest
 {
     public int Id { get; set; }
     public string Title { get; set; } = default!;
@@ -13,9 +11,8 @@ public class Quest : ISoftDelete
 
     public QuestStatusEnum Status { get; set; }
     public PriorityEnum Priority { get; set; }
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAt { get; set; }
 
+    // Relations: One to Many => relationships with (Category, Group, User)
     // Relationships
     public int? CategoryId { get; set; }
     public Category? Category { get; set; } = default!;
@@ -24,10 +21,12 @@ public class Quest : ISoftDelete
     public Group Group { get; set; } = default!;
 
     // (Creator)
-    public string AuthorId { get; set; } = default!;
-    public User Author { get; set; } = default!;
+    public string? AuthorId { get; set; } = default!;
+    public User? Author { get; set; } = default!;
 
-    // Assignees (Many-to-Many)
+    // Relations: One-to-Many => relationships with (UserQuests)
     public ICollection<UserQuest> Assignees { get; set; } = [];
+
+    // Relations: Many-to-Many => relationships with (User, Tag)
     public ICollection<Tag> Tags { get; set; } = [];
 }

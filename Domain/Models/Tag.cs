@@ -1,17 +1,15 @@
-﻿using Domain.Contracts;
+﻿namespace Domain.Models;
 
-namespace Domain.Models;
-
-public class Tag : ISoftDelete
+public class Tag
 {
     public int Id { get; set; }
     public string Name { get; set; } = default!;
     public string Color { get; set; } = default!;
 
+    // Relations: One to Many => relationships with (Workspace)
     public int WorkspaceId { get; set; }
     public Workspace Workspace { get; set; } = default!;
 
+    // Relations: Many-to-Many => relationships with (Quests)
     public ICollection<Quest> Quests { get; set; } = [];
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAt { get; set; }
 }

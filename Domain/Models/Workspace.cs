@@ -1,21 +1,16 @@
-﻿using Domain.Contracts;
+﻿namespace Domain.Models;
 
-namespace Domain.Models;
-
-public class Workspace : ISoftDelete
+public class Workspace
 {
     public int Id { get; set; }
     public string Name { get; set; } = default!;
     public DateTime CreatedAt { get; set; }
     public string? Avatar { get; set; }
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAt { get; set; }
 
+    // One-to-Many Relationships (User, Categories, Invitations, Spaces, Tags)
     // Owner (fk)
     public string OwnerId { get; set; } = default!;
     public User User { get; set; } = default!;
-
-    // One-to-Many Relationships
     public ICollection<Category> Categories { get; set; } = [];
     public ICollection<Invitation> Invitations { get; set; } = [];
     public ICollection<Space> Spaces { get; set; } = [];

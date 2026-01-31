@@ -8,9 +8,10 @@ public class TagConfiguration : IEntityTypeConfiguration<Tag>
 {
     public void Configure(EntityTypeBuilder<Tag> builder)
     {
-        builder.HasOne(t => t.Workspace)
-               .WithMany(w => w.Tags)
-               .HasForeignKey(t => t.WorkspaceId)
-               .OnDelete(DeleteBehavior.NoAction);
+        builder
+            .HasOne(t => t.Workspace)
+            .WithMany(w => w.Tags)
+            .HasForeignKey(t => t.WorkspaceId)
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
