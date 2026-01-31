@@ -11,6 +11,7 @@ public class GroupConfiguration : IEntityTypeConfiguration<Group>
         builder
             .HasOne(g => g.Space)
             .WithMany(s => s.Groups)
-            .HasForeignKey(g => g.SpaceId);
+            .HasForeignKey(g => g.SpaceId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

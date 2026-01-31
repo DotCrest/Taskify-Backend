@@ -11,6 +11,7 @@ public class SpaceConfiguration : IEntityTypeConfiguration<Space>
         builder
             .HasOne(s => s.Workspace)
             .WithMany(w => w.Spaces)
-            .HasForeignKey(s => s.WorkspaceId);
+            .HasForeignKey(s => s.WorkspaceId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

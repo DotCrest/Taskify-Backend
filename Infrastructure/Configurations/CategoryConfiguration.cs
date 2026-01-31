@@ -11,6 +11,7 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder
             .HasOne(c => c.Workspace)
             .WithMany(w => w.Categories)
-            .HasForeignKey(c => c.WorkspaceId);
+            .HasForeignKey(c => c.WorkspaceId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

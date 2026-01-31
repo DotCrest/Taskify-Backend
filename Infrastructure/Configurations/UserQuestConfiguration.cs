@@ -20,14 +20,6 @@ public class UserQuestConfiguration : IEntityTypeConfiguration<UserQuest>
             .HasOne(uq => uq.Quest)
             .WithMany(q => q.Assignees)
             .HasForeignKey(uq => uq.QuestId)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder.HasIndex(uq => new { uq.UserId, uq.IsDeleted })
-               .HasFilter("[IsDeleted] = 0")
-               .HasDatabaseName("IX_QuestUser_Active_User");
-
-        builder.HasIndex(uq => new { uq.QuestId, uq.IsDeleted })
-               .HasFilter("[IsDeleted] = 0")
-               .HasDatabaseName("IX_QuestUser_Active_Quest");
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

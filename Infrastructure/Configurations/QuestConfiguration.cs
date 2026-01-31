@@ -14,18 +14,20 @@ public class QuestConfiguration : IEntityTypeConfiguration<Quest>
         builder
             .HasOne(q => q.Category)
             .WithMany(c => c.Quests)
-            .HasForeignKey(q => q.CategoryId);
+            .HasForeignKey(q => q.CategoryId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder
             .HasOne(q => q.Group)
             .WithMany(g => g.Quests)
-            .HasForeignKey(q => q.GroupId);
+            .HasForeignKey(q => q.GroupId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder
             .HasOne(q => q.Author)
             .WithMany(u => u.CreatedQuests)
             .HasForeignKey(q => q.AuthorId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder
             .HasMany(q => q.Tags)

@@ -1,26 +1,21 @@
-﻿using Domain.Contracts;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 
 namespace Domain.Models;
 
-public class User : IdentityUser, ISoftDelete
+public class User : IdentityUser
 {
     public string Name { get; set; } = null!;
     public string? PhotoUrl { get; set; }
     public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAt { get; set; }
 
-    // Relation 1: One to Many => relationships with (Quests, Workspaces, Comments, Invitations)
-    public ICollection<Quest> CreatedQuests { get; set; } = [];
+    // Relations: One to Many => relationships with (Quests, Workspaces, Comments, Invitations)
+    public ICollection<Quest> CreatedQuests { get; set; } = []; // As Author
+    public ICollection<UserQuest> AssignedQuests { get; set; } = []; // As Assignee in UserQuest table
     public ICollection<Workspace> OwnedWorkspaces { get; set; } = [];
     public ICollection<Comment> Comments { get; set; } = [];
     public ICollection<Invitation> SentInvitations { get; set; } = [];
 
-    // Relation 2: Many-to-Many => Quests assigned to these users 
-    public ICollection<UserQuest> AssignedQuests { get; set; } = [];
-    // Relation 3: many-to-many => relationship between Users and Spaces
+    // Relations: Many-to-Many => relationships with (Space, Workspace, Quests)
     public ICollection<SpaceMember> SpaceMembers { get; set; } = [];
-    // Relation 4: many-to-many => relationship between Users and Workspaces
     public ICollection<WorkspaceMember> WorkspaceMembers { get; set; } = [];
 }
