@@ -1,8 +1,6 @@
-﻿using Domain.Contracts;
+﻿namespace Domain.Models;
 
-namespace Domain.Models;
-
-public class Space : ISoftDelete
+public class Space
 {
     public int Id { get; set; }
     public string Name { get; set; } = default!;
@@ -19,6 +17,4 @@ public class Space : ISoftDelete
     public ICollection<Group> Groups { get; set; } = [];
     public ICollection<Invitation> Invitations { get; set; } = [];
     public ICollection<SpaceMember> SpaceMembers { get; set; } = [];
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAt { get; set; }
 }

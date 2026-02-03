@@ -18,7 +18,6 @@ public class CommentConfiguration : IEntityTypeConfiguration<Comment>
             .HasOne(c => c.Quest)
             .WithMany()
             .HasForeignKey(c => c.QuestId)
-            .OnDelete(DeleteBehavior.NoAction);
-
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

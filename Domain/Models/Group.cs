@@ -1,8 +1,6 @@
-﻿using Domain.Contracts;
+﻿namespace Domain.Models;
 
-namespace Domain.Models;
-
-public class Group : ISoftDelete // this is a List of Quests but, for clean code I named it 'Group' not 'List'
+public class Group // this is a List of Quests but, for clean code I named it 'Group' not 'List'
 {
     public int Id { get; set; }
     public string Name { get; set; } = default!;
@@ -14,8 +12,6 @@ public class Group : ISoftDelete // this is a List of Quests but, for clean code
 
     public int SpaceId { get; set; }
     public Space Space { get; set; } = default!;
-
+    // Relations: One to Many => relationships with (Quests)
     public ICollection<Quest> Quests { get; set; } = [];
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAt { get; set; }
 }

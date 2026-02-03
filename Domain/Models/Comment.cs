@@ -1,15 +1,12 @@
-﻿using Domain.Contracts;
+﻿namespace Domain.Models;
 
-namespace Domain.Models;
-
-public class Comment : ISoftDelete
+public class Comment
 {
     public int Id { get; set; }
     public string Content { get; set; } = default!;
     public DateTime CreatedAt { get; set; }
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedAt { get; set; }
 
+    // Relations: One to Many => relationships with (User, Quest)
     public string UserId { get; set; } = default!;
     public User User { get; set; } = default!;
 
