@@ -14,4 +14,8 @@ public static class AuthErrors
         Error.ErrorFactory("Auth.UsernameAlreadyExsist", "User with this username already exists");
     public static readonly Error InvalidRefreshToken =
         Error.ErrorFactory("Auth.InvalidRefreshToken", "The provided RefreshToken token is invalid or has expired");
+    public static readonly Error UserNotFound =
+        Error.ErrorFactory("Auth.UserNotFound", "User Not Found");
+    public static readonly Error PasswordResetFailed =
+        Error.ErrorFactory("Auth.PasswordResetFailed", "Password Reset Failed");
 }

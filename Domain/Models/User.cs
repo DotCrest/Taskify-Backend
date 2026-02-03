@@ -23,4 +23,5 @@ public class User : IdentityUser, ISoftDelete
     public ICollection<SpaceMember> SpaceMembers { get; set; } = [];
     // Relation 4: many-to-many => relationship between Users and Workspaces
     public ICollection<WorkspaceMember> WorkspaceMembers { get; set; } = [];
+    public ICollection<RefeshToken>? RefeshTokens { get; set; }
 }

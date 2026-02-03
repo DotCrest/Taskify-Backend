@@ -34,7 +34,8 @@ builder.Services.AddIdentity<User, IdentityRole>(opt =>
     opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     opt.Lockout.AllowedForNewUsers = true;
 }).AddEntityFrameworkStores<ApplicationDbContext>()
-.AddRoles<IdentityRole>();
+.AddRoles<IdentityRole>()
+.AddDefaultTokenProviders();
 builder.Services.AddScoped<IDataSeeding, DataSeeding>();
 var app = builder.Build();
 

@@ -4,6 +4,7 @@ using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Errors;
 using Domain.Models;
+
 using Domain.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +55,8 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
             var refreshToken = CreateRefreshToken();
             user.RefeshTokens.Add(refreshToken);
             await _userManager.UpdateAsync(user);
+            authResponse.RefreshToken = refreshToken.Token;
+            authResponse.RefreshTokenExpiration = refreshToken.ExpiresOn;
         }
 
         return Result<AuthResponseDto>.Success(authResponse);
@@ -93,6 +96,9 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         }
         var roles = await _userManager.AddToRoleAsync(user, "User");
         var jwtToken = await CreateTokenAsync(user);
+        var refreshToken = CreateRefreshToken();
+        user.RefeshTokens.Add(refreshToken);
+        await _userManager.UpdateAsync(user);
         var authRespons = new AuthResponseDto()
         {
 
@@ -102,7 +108,9 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
             Username = user.UserName,
             Email = user.Email,
             Message = "User Registered Successfully",
-            Roles = new List<string>() { "User" }
+            Roles = new List<string>() { "User" },
+            RefreshToken = refreshToken.Token,
+            RefreshTokenExpiration = refreshToken.ExpiresOn
         };
         return Result<AuthResponseDto>.Success(authRespons);
 
@@ -130,7 +138,7 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
             expires: DateTime.UtcNow.AddDays(30));
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-    public async Task<Result<AuthResponseDto>> RefreshTokenAsync(string refreshToken)
+    public async Task<Result<AuthResponseDto>> GenerateNewTokenAsync(string refreshToken)
     {
         var user = await _userManager.Users.SingleOrDefaultAsync(u => u.RefeshTokens.Any(t => t.Token == refreshToken));
         if (user == null)
@@ -185,6 +193,18 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
 
 
+    public async Task<Result<bool>> ResetPasswordAsync(string email, string token1, string token2)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user is null)
+            return Result<bool>.Failure(AuthErrors.UserNotFound);
+        var resetPassResult = await _userManager.ResetPasswordAsync(user, token1, token2);
+        if (!resetPassResult.Succeeded)
+        {
+            return Result<bool>.Failure(AuthErrors.PasswordResetFailed);
+        }
+        return Result<bool>.Success(true);
+    }
     private RefeshToken CreateRefreshToken()
     {
         var randomNumber = new byte[32];

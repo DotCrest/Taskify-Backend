@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace Domain.Entites;
+namespace Domain.Models;
 
 [Owned]
 public class RefeshToken

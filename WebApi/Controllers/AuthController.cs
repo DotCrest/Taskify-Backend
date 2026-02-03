@@ -43,7 +43,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
     public async Task<ActionResult<AuthResponseDto>> RefreshToken()
     {
         var refreshToken = Request.Cookies["refreshToken"];
-        var authResponse = await _authenticationService.RefreshTokenAsync(refreshToken!);
+        var authResponse = await _authenticationService.GenerateNewTokenAsync(refreshToken!);
         return authResponse.Map<ActionResult<AuthResponseDto>>(
               onSuccess: result =>
               {
@@ -71,6 +71,16 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
             error => BadRequest(error)
         );
     }
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
+    {
+        var result = await _authenticationService.ResetPasswordAsync(email: resetPasswordDto.Email, newPassword: resetPasswordDto.NewPassword, token: resetPasswordDto.Token);
+        return result.Map<IActionResult>(
+            onSuccess: _ => NoContent(),
+            onFailure: error => BadRequest(error)
+            );
+    }
+
 
 
 
@@ -79,12 +89,15 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
             Expires = expiresOn.ToLocalTime()
         };
         Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+
     }
 
-    //TODO: reset Password Endpoint
+
     //TODO: Forgot Password Endpoint
 
 
