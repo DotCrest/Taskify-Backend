@@ -17,6 +17,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Tag> Tags { get; set; }
     public DbSet<SpaceMember> SpaceMembers { get; set; }
     public DbSet<WorkspaceMember> WorkspaceMembers { get; set; }
+    public DbSet<VerificationCode> VerificationCodes { get; set; }
 
     override protected void OnModelCreating(ModelBuilder builder)
     {
