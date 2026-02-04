@@ -3,6 +3,7 @@ using Application.Services;
 using Domain.Contracts;
 using Domain.Models;
 using Domain.Options;
+using Domain.Settings;
 using Infrastructure;
 using Infrastructure.context;
 using Infrastructure.Repository;
@@ -24,6 +25,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 builder.Services.AddTransient(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("email-config"));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
 builder.Services.AddIdentity<User, IdentityRole>(opt =>
 {
