@@ -9,5 +9,5 @@ public interface IAuthenticationService
     Task<Result<AuthResponseDto>> Register(RegisterDto registerDto);
     Task<Result<AuthResponseDto>> GenerateNewTokenAsync(string refreshToken);
     Task<Result<bool>> RevokeTokenAsync(string refreshToken);
-    Task<Result<bool>> ResetPasswordAsync(string email, string newPassword, string token);
+    Task<Result<bool>> ResetPasswordAsync(ResetPasswordDto resetPasswordDto,string email);  
 }

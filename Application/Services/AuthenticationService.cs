@@ -16,7 +16,8 @@ using System.Security.Cryptography;
 using System.Text;
 namespace Application.Services;
 
-public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options) : IAuthenticationService
+public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options
+    , PasswordHasher<User> passwordHasher) : IAuthenticationService
 {
     public async Task<Result<AuthResponseDto>> Login(LoginDto loginDto)
     {
@@ -122,7 +123,8 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         var claims = new List<Claim>()
         {
             new Claim(ClaimTypes.Name,user.Name),
-            new Claim(ClaimTypes.Email,user.Email)
+            new Claim(ClaimTypes.Email,user.Email),
+            new Claim(ClaimTypes.NameIdentifier,user.Id.ToString())
         };
         var roloes = await _userManager.GetRolesAsync(user);
         foreach (var role in roloes)
@@ -193,18 +195,7 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
 
 
-    public async Task<Result<bool>> ResetPasswordAsync(string email, string token1, string token2)
-    {
-        var user = await _userManager.FindByEmailAsync(email);
-        if (user is null)
-            return Result<bool>.Failure(AuthErrors.UserNotFound);
-        var resetPassResult = await _userManager.ResetPasswordAsync(user, token1, token2);
-        if (!resetPassResult.Succeeded)
-        {
-            return Result<bool>.Failure(AuthErrors.PasswordResetFailed);
-        }
-        return Result<bool>.Success(true);
-    }
+
     private RefeshToken CreateRefreshToken()
     {
         var randomNumber = new byte[32];
@@ -220,4 +211,18 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
     }
 
+    public async Task<Result<bool>> ResetPasswordAsync(ResetPasswordDto resetPasswordDto, string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        var IsPasswordCorrect = await _userManager.CheckPasswordAsync(user, resetPasswordDto.OldPassword);
+        if (!IsPasswordCorrect)
+        {
+            return Result<bool>.Failure(new Error("InvalidOldPassword", "The old password is incorrect."));
+        }
+        var PasswordHash = passwordHasher.HashPassword(user, resetPasswordDto.NewPassword);
+        user.PasswordHash = PasswordHash;
+        await _userManager.UpdateAsync(user);
+        return Result<bool>.Success(true);
+
+    }
 }
