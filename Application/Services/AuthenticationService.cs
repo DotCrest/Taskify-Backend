@@ -168,34 +168,34 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
     }
 
-    //public async Task<Result<BaseToReturnDto>> RevokeTokenAsync(string refreshToken)
-    //{
+    public async Task<Result<BaseToReturnDto>> RevokeTokenAsync(string refreshToken)
+    {
 
 
-    //    var user = await _userManager.Users
-    //        .SingleOrDefaultAsync(u =>
-    //            u.RefeshTokens.Any(t => t.Token == refreshToken));
+        var user = await _userManager.Users
+            .SingleOrDefaultAsync(u =>
+                u.RefeshTokens.Any(t => t.Token == refreshToken));
 
-    //    if (user is null)
-    //        return Result<BaseToReturnDto>.Failure(AuthErrors.InvalidRefreshToken);
+        if (user is null)
+            return Result<BaseToReturnDto>.Failure(AuthErrors.InvalidRefreshToken);
 
-    //    var token = user.RefeshTokens
-    //        .Single(t => t.Token == refreshToken);
+        var token = user.RefeshTokens
+            .Single(t => t.Token == refreshToken);
 
-    //    if (!token.IsActive)
-    //        return Result<BaseToReturnDto>.Failure(AuthErrors.InvalidRefreshToken);
+        if (!token.IsActive)
+            return Result<BaseToReturnDto>.Failure(AuthErrors.InvalidRefreshToken);
 
-    //    token.RevokedOn = DateTime.UtcNow;
+        token.RevokedOn = DateTime.UtcNow;
 
-    //    await _userManager.UpdateAsync(user);
-    //    var baseToReturnDto = new BaseToReturnDto()
-    //    {
-    //        IsSucsses = true,
-    //        Message = "Refresh token revoked successfully."
-    //    };
+        await _userManager.UpdateAsync(user);
+        var baseToReturnDto = new BaseToReturnDto()
+        {
+            IsSuccess = true,
+            Message = "Refresh token revoked successfully."
+        };
 
-    //    return Result<BaseToReturnDto>.Success(baseToReturnDto);
-    //}
+        return Result<BaseToReturnDto>.Success(baseToReturnDto);
+    }
 
 
 
@@ -216,23 +216,23 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
     }
 
-    //public async Task<Result<BaseToReturnDto>> ResetPasswordAsync(ResetPasswordDto resetPasswordDto, string email)
-    //{
-    //    var user = await _userManager.FindByEmailAsync(email);
-    //    var IsPasswordCorrect = await _userManager.CheckPasswordAsync(user, resetPasswordDto.OldPassword);
-    //    if (!IsPasswordCorrect)
-    //    {
-    //        return Result<BaseToReturnDto>.Failure(new Error("InvalidOldPassword", "The old password is incorrect."));
-    //    }
-    //    var PasswordHash = passwordHasher.HashPassword(user, resetPasswordDto.NewPassword);
-    //    user.PasswordHash = PasswordHash;
-    //    await _userManager.UpdateAsync(user);
-    //    var baseToReturnDto = new BaseToReturnDto()
-    //    {
-    //        IsSucsses = true,
-    //        Message = "Password has been reset successfully."
-    //    };
-    //    return Result<BaseToReturnDto>.Success(baseToReturnDto);
+    public async Task<Result<BaseToReturnDto>> ResetPasswordAsync(ResetPasswordDto resetPasswordDto, string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        var IsPasswordCorrect = await _userManager.CheckPasswordAsync(user, resetPasswordDto.OldPassword);
+        if (!IsPasswordCorrect)
+        {
+            return Result<BaseToReturnDto>.Failure(new Error("InvalidOldPassword", "The old password is incorrect."));
+        }
+        var PasswordHash = passwordHasher.HashPassword(user, resetPasswordDto.NewPassword);
+        user.PasswordHash = PasswordHash;
+        await _userManager.UpdateAsync(user);
+        var baseToReturnDto = new BaseToReturnDto()
+        {
+            IsSuccess = true,
+            Message = "Password has been reset successfully."
+        };
+        return Result<BaseToReturnDto>.Success(baseToReturnDto);
 
-    //}
+    }
 }
