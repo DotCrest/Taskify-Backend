@@ -14,7 +14,6 @@ public class CodeVerificationService(IUnitOfWork<VerificationCode> unitOfWork,
                                  IGenericRepository<VerificationCode> verificationCodeRepo,
                                  ILogger<CodeVerificationService> logger) : ICodeVerificationService
 {
-    // map to endpoint
     public async Task<BaseToReturnDto> SendCode(string email)
     {
         // check if code already exists for email and is active
@@ -109,6 +108,8 @@ public class CodeVerificationService(IUnitOfWork<VerificationCode> unitOfWork,
             // generate code
             codeToReturn = GenerateCode(6);
             existCode.Code = codeToReturn;
+            // update activiation time
+            existCode.CreatedAt = DateTime.Now;
             verificationCodeRepo.Update(existCode);
             await unitOfWork.SaveAsync();
             return codeToReturn;
