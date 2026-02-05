@@ -26,7 +26,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
                  SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
                  return Ok(result);
              },
-                onFailure: error => BadRequest(error)
+                onFailure: error => HandelFailure(error)
         );
 
     }
@@ -41,7 +41,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
                   SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
                   return Ok(result);
               },
-              onFailure: error => BadRequest(error)
+              onFailure: error => HandelFailure(error)
         );
     }
     [HttpGet("refreshToken")]
@@ -59,7 +59,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
                   }
                   return Ok(result);
               },
-              onFailure: error => BadRequest(error)
+              onFailure: error => HandelFailure(error)
         );
     }
     [HttpPost("revoke")]
@@ -73,7 +73,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
 
         return result.Map<ActionResult<BaseToReturnDto>>(
             _ => Ok(result),
-            error => BadRequest(error)
+            error => HandelFailure(error)
         );
     }
     [Authorize]
@@ -86,7 +86,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
         var result = await _authenticationService.ResetPasswordAsync(resetPasswordDto, email);
         return result.Map<ActionResult<bool>>(
             onSuccess: _ => Ok(result),
-            onFailure: error => BadRequest(error)
+            onFailure: error => HandelFailure(error)
             );
     }
 
