@@ -14,5 +14,7 @@ namespace Application.Shared.Errors
             new Error("Auth.UsernameAlreadyExsist", "User with this username already exists");
         public static readonly Error InvalidRefreshToken =
             new Error("Auth.InvalidRefreshToken", "The refresh token is invalid");
+        public static readonly Error UserNotFound =
+            new Error("Auth.UserNotFound", "User not found");
     }
 }
