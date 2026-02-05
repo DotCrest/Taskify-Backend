@@ -114,6 +114,15 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
             onFailure: error => HandelFailure(error)
         );
     }
+    [HttpPost("update-password")]
+    public async Task<ActionResult<BaseToReturnDto>> UpdatePassword([FromBody] UpdatePasswordDto updatePasswordDto)
+    {
+        var result = await _authenticationService.UpdatePasswordAsync(updatePasswordDto);
+        return result.MapList<ActionResult<BaseToReturnDto>>(
+            onSuccess: _ => Ok(result),
+            onFailure: error => HandelFailure(error)
+        );
+    }
     private ActionResult HandelFailure(object errors)
     {
         var errorCode = errors switch
