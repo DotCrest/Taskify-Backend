@@ -250,6 +250,26 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         };
         return Result<BaseToReturnDto>.Success(baseToReturnDto);
     }
+    public async Task<Result<BaseToReturnDto>> UpdatePasswordAsync(UpdatePasswordDto updatePasswordDto)
+    {
+        var user = await _userManager.FindByEmailAsync(updatePasswordDto.Email);
+        if (user is null)
+            return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
+        user.PasswordHash = passwordHasher.HashPassword(user, updatePasswordDto.NewPassword);
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            return Result<BaseToReturnDto>
+                .Failure(result.Errors.Select(x => new Error(x.Code, x.Description)).ToList());
+        }
+        var baseToReturnDto = new BaseToReturnDto()
+        {
+            IsSuccess = true,
+            Message = "Password has been updated successfully."
+        };
+        return Result<BaseToReturnDto>.Success(baseToReturnDto);
+
+    }
 
 
 }

@@ -11,5 +11,5 @@ public interface IAuthenticationService
     Task<Result<BaseToReturnDto>> RevokeTokenAsync(string refreshToken);
     Task<Result<BaseToReturnDto>> ResetPasswordAsync(ResetPasswordDto resetPasswordDto, string email);
     Task<Result<BaseToReturnDto>> ForgetPasswordAsync(string email);
-
+    Task<Result<BaseToReturnDto>> UpdatePasswordAsync(UpdatePasswordDto updatePasswordDto);
 }
