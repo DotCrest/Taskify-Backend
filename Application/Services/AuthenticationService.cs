@@ -17,7 +17,7 @@ using System.Text;
 namespace Application.Services;
 
 public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options
-    , PasswordHasher<User> passwordHasher) : IAuthenticationService
+    , PasswordHasher<User> passwordHasher, ICodeVerificationService _codeVerificationService) : IAuthenticationService
 {
     public async Task<Result<AuthResponseDto>> Login(LoginDto loginDto)
     {
@@ -235,4 +235,21 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         return Result<BaseToReturnDto>.Success(baseToReturnDto);
 
     }
+
+    public async Task<Result<BaseToReturnDto>> ForgetPasswordAsync(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user is null)
+            return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
+        await _codeVerificationService.SendCode(email);
+
+        var baseToReturnDto = new BaseToReturnDto()
+        {
+            IsSuccess = true,
+            Message = "Verification code sent to your email."
+        };
+        return Result<BaseToReturnDto>.Success(baseToReturnDto);
+    }
+
+
 }
