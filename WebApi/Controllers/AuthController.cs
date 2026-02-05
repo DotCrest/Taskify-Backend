@@ -34,7 +34,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
     public async Task<ActionResult<AuthResponseDto>> Register([FromForm] RegisterDto registerDto)
     {
         var authResponse = await _authenticationService.Register(registerDto);
-        return authResponse.Map<ActionResult<AuthResponseDto>>(
+        return authResponse.MapList<ActionResult<AuthResponseDto>>(
               onSuccess: result =>
               {
 
