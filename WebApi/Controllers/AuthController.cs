@@ -1,6 +1,10 @@
-﻿using Application.Dtos;
+﻿using Application.Common.Errors;
+using Application.Dtos;
 using Application.ServiceAbstractions;
+using Application.Shared.Errors;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 
 namespace WebApi.Controllers;
@@ -58,33 +62,33 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
               onFailure: error => BadRequest(error)
         );
     }
-    //[HttpPost("revoke")]
-    //public async Task<ActionResult<BaseToReturnDto>> Revoke([FromBody] RevokeTokenDto revokeTokenDto)
-    //{
-    //    var refreshToken = revokeTokenDto.Token ?? Request.Cookies["refreshToken"];
-    //    if (string.IsNullOrWhiteSpace(refreshToken))
-    //        return BadRequest(AuthErrors.InvalidRefreshToken);
+    [HttpPost("revoke")]
+    public async Task<ActionResult<BaseToReturnDto>> Revoke([FromBody] RevokeTokenDto revokeTokenDto)
+    {
+        var refreshToken = revokeTokenDto.Token ?? Request.Cookies["refreshToken"];
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            return BadRequest(AuthErrors.InvalidRefreshToken);
 
-    //    var result = await _authenticationService.RevokeTokenAsync(refreshToken!);
+        var result = await _authenticationService.RevokeTokenAsync(refreshToken!);
 
-    //    return result.Map<ActionResult<BaseToReturnDto>>(
-    //        _ => Ok(result),
-    //        error => BadRequest(error)
-    //    );
-    //}
-    //[Authorize]
-    //[HttpPost("reset-password")]
-    //[ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-    //[ProducesResponseType(typeof(Error), StatusCodes.Status400BadRequest)]
-    //public async Task<ActionResult<bool>> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
-    //{
-    //    var email = User.FindFirstValue(ClaimTypes.Email);
-    //    var result = await _authenticationService.ResetPasswordAsync(resetPasswordDto, email);
-    //    return result.Map<ActionResult<bool>>(
-    //        onSuccess: _ => Ok(result),
-    //        onFailure: error => BadRequest(error)
-    //        );
-    //}
+        return result.Map<ActionResult<BaseToReturnDto>>(
+            _ => Ok(result),
+            error => BadRequest(error)
+        );
+    }
+    [Authorize]
+    [HttpPost("reset-password")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<bool>> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
+    {
+        var email = User.FindFirstValue(ClaimTypes.Email);
+        var result = await _authenticationService.ResetPasswordAsync(resetPasswordDto, email);
+        return result.Map<ActionResult<bool>>(
+            onSuccess: _ => Ok(result),
+            onFailure: error => BadRequest(error)
+            );
+    }
 
 
 
