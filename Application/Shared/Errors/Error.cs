@@ -1,15 +1,4 @@
-﻿namespace Application.Common.Errors;
-
-public class Error
+﻿namespace Application.Common.Errors
 {
-    public Error(string code, string message)
-    {
-        Code = code;
-        Message = message;
-    }
-
-    public string Code { get; set; } = null!;
-    public string Message { get; set; } = null!;
-    public static Error ErrorFactory(string code, string message)
-        => new(code, message);
+    public record Error(string Code, string Message) { }
 }
