@@ -105,6 +105,15 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
         Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
 
     }
+    [HttpPost("forget-password")]
+    public async Task<ActionResult<BaseToReturnDto>> ForgetPassword([FromBody] string email)
+    {
+        var result = await _authenticationService.ForgetPasswordAsync(email);
+        return result.Map<ActionResult<BaseToReturnDto>>(
+            onSuccess: _ => Ok(result),
+            onFailure: error => HandelFailure(error)
+        );
+    }
     private ActionResult HandelFailure(object errors)
     {
         var errorCode = errors switch
@@ -123,7 +132,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
 
     }
 
-    //TODO: Forgot Password Endpoint
+
 
 
 }
