@@ -105,7 +105,23 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
         Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
 
     }
+    private ActionResult HandelFailure(object errors)
+    {
+        var errorCode = errors switch
+        {
+            Error e => e.Code,
+            IEnumerable<Error> es => es.FirstOrDefault()?.Code,
+            _ => string.Empty
+        };
 
+        return errorCode switch
+        {
+            var code when code.Contains("NotFound") => NotFound(errors),
+            var code when code.Contains("Unauthorized") => Unauthorized(errors),
+            _ => BadRequest(errors)
+        };
+
+    }
 
     //TODO: Forgot Password Endpoint
 
