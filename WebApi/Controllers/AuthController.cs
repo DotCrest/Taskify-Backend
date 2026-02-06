@@ -33,10 +33,15 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
 
     }
     [HttpPost("register")]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
+
     public async Task<ActionResult<AuthResponseDto>> Register([FromForm] RegisterDto registerDto)
     {
         var authResponse = await _authenticationService.Register(registerDto);
-        return authResponse.MapList<ActionResult<AuthResponseDto>>(
+
+        return authResponse.Map<ActionResult<AuthResponseDto>>(
               onSuccess: result =>
               {
 
@@ -120,7 +125,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
     public async Task<ActionResult<BaseToReturnDto>> UpdatePassword([FromBody] UpdatePasswordDto updatePasswordDto)
     {
         var result = await _authenticationService.UpdatePasswordAsync(updatePasswordDto);
-        return result.MapList<ActionResult<BaseToReturnDto>>(
+        return result.Map<ActionResult<BaseToReturnDto>>(
             onSuccess: _ => Ok(result),
             onFailure: error => HandleFailure(error)
         );
@@ -137,7 +142,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
         var actionResult = errorCode switch
         {
             var code when code.Contains("NotFound") => NotFound(errors),
-            var code when code.Contains("AlreadyExsist") => Conflict(errors),
+            var code when code.Contains("AlreadyExist") => Conflict(errors),
             var code when code.Contains("LockedOut") => StatusCode(StatusCodes.Status423Locked, errors),
             var code when code.Contains("InvalidCredentials") || code.Contains("InvalidRefreshToken") ||
             code.Contains("Unauthorized")
