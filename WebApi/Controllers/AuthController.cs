@@ -123,7 +123,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
             onFailure: error => HandelFailure(error)
         );
     }
-    private ActionResult HandelFailure(object errors)
+    private ActionResult HandleFailure(object errors)
     {
         var errorCode = errors switch
         {
@@ -132,13 +132,17 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
             _ => string.Empty
         };
 
-        return errorCode switch
+        var actionResult = errorCode switch
         {
             var code when code.Contains("NotFound") => NotFound(errors),
-            var code when code.Contains("Unauthorized") => Unauthorized(errors),
+            var code when code.Contains("AlreadyExsist") => Conflict(errors),
+            var code when code.Contains("LockedOut") => StatusCode(StatusCodes.Status423Locked, errors),
+            var code when code.Contains("InvalidCredentials") || code.Contains("InvalidRefreshToken") ||
+            code.Contains("Unauthorized")
+                => Unauthorized(errors),
             _ => BadRequest(errors)
         };
-
+        return actionResult;
     }
 
 
