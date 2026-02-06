@@ -70,7 +70,7 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         if (await _userManager.FindByEmailAsync(registerDto.Email) is not null)
         {
 
-            return Result<AuthResponseDto>.Failure(AuthErrors.EmailAlreadyExsists);
+            return Result<AuthResponseDto>.Failure(AuthErrors.EmailAlreadyExists);
 
         }
         if (await _userManager.FindByNameAsync(registerDto.UserName) is not null)
