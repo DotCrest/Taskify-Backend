@@ -26,7 +26,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
                  SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
                  return Ok(result);
              },
-                onFailure: error => HandelFailure(error)
+                onFailure: error => HandleFailure(error)
         );
 
     }
@@ -41,7 +41,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
                   SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
                   return Ok(result);
               },
-              onFailure: error => HandelFailure(error)
+              onFailure: error => HandleFailure(error)
         );
     }
     [HttpGet("refreshToken")]
@@ -59,7 +59,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
                   }
                   return Ok(result);
               },
-              onFailure: error => HandelFailure(error)
+              onFailure: error => HandleFailure(error)
         );
     }
     [HttpPost("revoke")]
@@ -73,7 +73,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
 
         return result.Map<ActionResult<BaseToReturnDto>>(
             _ => Ok(result),
-            error => HandelFailure(error)
+            error => HandleFailure(error)
         );
     }
     [Authorize]
@@ -86,7 +86,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
         var result = await _authenticationService.ResetPasswordAsync(resetPasswordDto, email);
         return result.Map<ActionResult<bool>>(
             onSuccess: _ => Ok(result),
-            onFailure: error => HandelFailure(error)
+            onFailure: error => HandleFailure(error)
             );
     }
 
@@ -111,7 +111,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
         var result = await _authenticationService.ForgetPasswordAsync(email);
         return result.Map<ActionResult<BaseToReturnDto>>(
             onSuccess: _ => Ok(result),
-            onFailure: error => HandelFailure(error)
+            onFailure: error => HandleFailure(error)
         );
     }
     [HttpPost("update-password")]
@@ -120,7 +120,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
         var result = await _authenticationService.UpdatePasswordAsync(updatePasswordDto);
         return result.MapList<ActionResult<BaseToReturnDto>>(
             onSuccess: _ => Ok(result),
-            onFailure: error => HandelFailure(error)
+            onFailure: error => HandleFailure(error)
         );
     }
     private ActionResult HandleFailure(object errors)
