@@ -1,16 +1,15 @@
 ﻿using Application.Dtos;
 using Application.Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Application.ServiceAbstractions
+namespace Application.ServiceAbstractions;
+
+public interface IAuthenticationService
 {
-    public interface IAuthenticationService
-    {
-        Task<Result<AuthResponseDto>> Login(LoginDto loginDto);
-        Task<Result<AuthResponseDto>> Register(RegisterDto registerDto);
-    }
+    Task<Result<AuthResponseDto>> Login(LoginDto loginDto);
+    Task<Result<AuthResponseDto>> Register(RegisterDto registerDto);
+    Task<Result<AuthResponseDto>> GenerateNewTokenAsync(string refreshToken);
+    Task<Result<BaseToReturnDto>> RevokeTokenAsync(string refreshToken);
+    Task<Result<BaseToReturnDto>> ResetPasswordAsync(ResetPasswordDto resetPasswordDto, string email);
+    Task<Result<BaseToReturnDto>> ForgetPasswordAsync(string email);
+    Task<Result<BaseToReturnDto>> UpdatePasswordAsync(UpdatePasswordDto updatePasswordDto);
 }
