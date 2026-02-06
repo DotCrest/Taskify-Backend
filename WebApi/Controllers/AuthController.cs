@@ -15,6 +15,8 @@ namespace WebApi.Controllers;
 public class AuthController(IAuthenticationService _authenticationService) : ControllerBase
 {
     [HttpPost("login")]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponseDto>> Login([FromForm] LoginDto loginDto)
     {
         var authResponse = await _authenticationService.Login(loginDto);
