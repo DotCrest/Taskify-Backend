@@ -41,8 +41,8 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         var jwtToken = await CreateTokenAsync(user);
         var authResponse = new AuthResponseDto();
         authResponse.IsAuthenticated = true;
-        authResponse.Token = jwtToken;
-        authResponse.ExpiresOn = DateTime.UtcNow.AddDays(30);
+        authResponse.Token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+        authResponse.ExpiresOn = jwtToken.ValidTo;
         authResponse.Username = user.UserName;
         authResponse.Email = user.Email;
         authResponse.Roles = roles.ToList();
@@ -50,6 +50,7 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         {
             var activeRefreshToken = user.RefeshTokens.FirstOrDefault(t => t.IsActive);
             authResponse.RefreshToken = activeRefreshToken!.Token;
+            authResponse.RefreshTokenExpiration = activeRefreshToken.ExpiresOn;
         }
         else
         {
@@ -104,8 +105,8 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         {
 
             IsAuthenticated = true,
-            Token = jwtToken,
-            ExpiresOn = DateTime.UtcNow.AddDays(30),
+            Token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
+            ExpiresOn = jwtToken.ValidTo,
             Username = user.UserName,
             Email = user.Email,
             Message = "User Registered Successfully",
@@ -117,7 +118,7 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
 
     }
-    private async Task<string> CreateTokenAsync(User user)
+    private async Task<JwtSecurityToken> CreateTokenAsync(User user)
     {
         var JwtOptions = _options.Value;
         var claims = new List<Claim>()
@@ -137,8 +138,8 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
             audience: JwtOptions.Audience,
             claims: claims,
             signingCredentials: signinCredentials,
-            expires: DateTime.UtcNow.AddDays(30));
-        return new JwtSecurityTokenHandler().WriteToken(token);
+            expires: DateTime.UtcNow.AddHours(JwtOptions.ExpirationInHours));
+        return token;
     }
     public async Task<Result<AuthResponseDto>> GenerateNewTokenAsync(string refreshToken)
     {
@@ -156,8 +157,8 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         var authResponse = new AuthResponseDto()
         {
             IsAuthenticated = true,
-            Token = jwtToken,
-            ExpiresOn = DateTime.UtcNow.AddDays(30),
+            Token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
+            ExpiresOn = jwtToken.ValidTo,
             Username = user.UserName,
             Email = user.Email,
             RefreshToken = newRefreshToken.Token,
