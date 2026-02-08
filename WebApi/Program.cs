@@ -4,6 +4,7 @@ using Domain.Contracts;
 using Domain.Models;
 using Domain.Options;
 using Domain.Settings;
+using FluentValidation;
 using Infrastructure;
 using Infrastructure.context;
 using Infrastructure.Repository;
@@ -34,6 +35,7 @@ builder.Services.AddScoped<PasswordHasher<User>>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("email-config"));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly, includeInternalTypes: true);
 builder.Services.AddIdentity<User, IdentityRole>(opt =>
 {
     opt.Password.RequireDigit = true;
