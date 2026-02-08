@@ -83,7 +83,7 @@ public class CodeVerificationService(IUnitOfWork<VerificationCode> unitOfWork,
         {
             Email = email,
             Code = code,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.UtcNow
         };
         await verificationCodeRepo.AddAsync(verificationCode);
         await unitOfWork.SaveAsync();
@@ -109,7 +109,7 @@ public class CodeVerificationService(IUnitOfWork<VerificationCode> unitOfWork,
             codeToReturn = GenerateCode(6);
             existCode.Code = codeToReturn;
             // update activiation time
-            existCode.CreatedAt = DateTime.Now;
+            existCode.CreatedAt = DateTime.UtcNow;
             verificationCodeRepo.Update(existCode);
             await unitOfWork.SaveAsync();
             return codeToReturn;

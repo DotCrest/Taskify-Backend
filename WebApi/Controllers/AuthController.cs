@@ -32,11 +32,11 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
         );
 
     }
+
     [HttpPost("register")]
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
-
     public async Task<ActionResult<AuthResponseDto>> Register([FromForm] RegisterDto registerDto)
     {
         var authResponse = await _authenticationService.Register(registerDto);
@@ -51,7 +51,10 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
               onFailure: error => HandleFailure(error)
         );
     }
+
     [HttpGet("refreshToken")]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponseDto>> RefreshToken()
     {
         var refreshToken = Request.Cookies["refreshToken"];
@@ -69,7 +72,10 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
               onFailure: error => HandleFailure(error)
         );
     }
+
     [HttpPost("revoke")]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<BaseToReturnDto>> Revoke([FromBody] RevokeTokenDto revokeTokenDto)
     {
         var refreshToken = revokeTokenDto.Token ?? Request.Cookies["refreshToken"];
@@ -83,36 +89,24 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
             error => HandleFailure(error)
         );
     }
+
     [Authorize]
     [HttpPost("reset-password")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Error), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<bool>> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
+    public async Task<ActionResult<BaseToReturnDto>> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
     {
         var email = User.FindFirstValue(ClaimTypes.Email);
         var result = await _authenticationService.ResetPasswordAsync(resetPasswordDto, email);
-        return result.Map<ActionResult<bool>>(
+        return result.Map<ActionResult<BaseToReturnDto>>(
             onSuccess: _ => Ok(result),
             onFailure: error => HandleFailure(error)
             );
     }
 
-
-
-
-    private void SetRefreshTokenInCookie(string refreshToken, DateTime expiresOn)
-    {
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
-            Expires = expiresOn.ToLocalTime()
-        };
-        Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
-
-    }
     [HttpPost("forget-password")]
+    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BaseToReturnDto>> ForgetPassword([FromBody] string email)
     {
         var result = await _authenticationService.ForgetPasswordAsync(email);
@@ -121,7 +115,10 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
             onFailure: error => HandleFailure(error)
         );
     }
+
     [HttpPost("update-password")]
+    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BaseToReturnDto>> UpdatePassword([FromBody] UpdatePasswordDto updatePasswordDto)
     {
         var result = await _authenticationService.UpdatePasswordAsync(updatePasswordDto);
@@ -130,14 +127,10 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
             onFailure: error => HandleFailure(error)
         );
     }
-    private ActionResult HandleFailure(object errors)
+    private ActionResult HandleFailure(IEnumerable<Error> errors)
     {
-        var errorCode = errors switch
-        {
-            Error e => e.Code,
-            IEnumerable<Error> es => es.FirstOrDefault()?.Code,
-            _ => string.Empty
-        };
+        var firstError = errors?.FirstOrDefault();
+        var errorCode = firstError?.Code ?? string.Empty;
 
         var actionResult = errorCode switch
         {
@@ -150,6 +143,18 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
             _ => BadRequest(errors)
         };
         return actionResult;
+    }
+    private void SetRefreshTokenInCookie(string refreshToken, DateTime expiresOn)
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Expires = expiresOn.ToLocalTime()
+        };
+        Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+
     }
 
 
