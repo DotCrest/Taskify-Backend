@@ -4,7 +4,6 @@ using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Errors;
 using Domain.Models;
-
 using Domain.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,13 +15,11 @@ using System.Security.Cryptography;
 using System.Text;
 namespace Application.Services;
 
-public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options
-    , PasswordHasher<User> passwordHasher, ICodeVerificationService _codeVerificationService) : IAuthenticationService
+public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options,
+                                   PasswordHasher<User> passwordHasher, ICodeVerificationService _codeVerificationService) : IAuthenticationService
 {
     public async Task<Result<AuthResponseDto>> Login(LoginDto loginDto)
     {
-
-
         var user = await _userManager.FindByEmailAsync(loginDto.Email);
         if (user == null || !await _userManager.CheckPasswordAsync(user, loginDto.Password))
         {
@@ -67,7 +64,6 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
     public async Task<Result<AuthResponseDto>> Register(RegisterDto registerDto)
     {
-
         if (await _userManager.FindByEmailAsync(registerDto.Email) is not null)
         {
 
@@ -237,12 +233,12 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
     }
 
-    public async Task<Result<BaseToReturnDto>> ForgetPasswordAsync(string email)
+    public async Task<Result<BaseToReturnDto>> ForgetPasswordAsync(ForgetPasswordDto forgetPasswordDto)
     {
-        var user = await _userManager.FindByEmailAsync(email);
+        var user = await _userManager.FindByEmailAsync(forgetPasswordDto.Email);
         if (user is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
-        await _codeVerificationService.SendCode(email);
+        await _codeVerificationService.SendCode(forgetPasswordDto.Email);
 
         var baseToReturnDto = new BaseToReturnDto()
         {
