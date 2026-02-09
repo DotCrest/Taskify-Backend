@@ -1,14 +1,17 @@
 ﻿using Application.ServiceAbstractions;
 using Application.Services;
+using Application.Validators.AuthenticationValidators;
 using Domain.Contracts;
 using Domain.Models;
 using Domain.Options;
 using Domain.Settings;
+using FluentValidation;
 using Infrastructure;
 using Infrastructure.context;
 using Infrastructure.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -21,7 +24,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
 builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString"));
@@ -34,6 +40,7 @@ builder.Services.AddScoped<PasswordHasher<User>>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("email-config"));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
+builder.Services.AddValidatorsFromAssembly(typeof(RegisterDtoValidator).Assembly, includeInternalTypes: true);
 builder.Services.AddIdentity<User, IdentityRole>(opt =>
 {
     opt.Password.RequireDigit = true;
