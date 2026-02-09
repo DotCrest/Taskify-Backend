@@ -107,9 +107,9 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
     [HttpPost("forget-password")]
     [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BaseToReturnDto>> ForgetPassword([FromBody] string email)
+    public async Task<ActionResult<BaseToReturnDto>> ForgetPassword([FromBody] ForgetPasswordDto forgetPasswordDto)
     {
-        var result = await _authenticationService.ForgetPasswordAsync(email);
+        var result = await _authenticationService.ForgetPasswordAsync(forgetPasswordDto.Email);
         return result.Map<ActionResult<BaseToReturnDto>>(
             onSuccess: _ => Ok(result),
             onFailure: error => HandleFailure(error)
