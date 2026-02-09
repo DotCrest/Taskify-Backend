@@ -1,5 +1,6 @@
 ﻿using Application.ServiceAbstractions;
 using Application.Services;
+using Application.Validators;
 using Domain.Contracts;
 using Domain.Models;
 using Domain.Options;
@@ -35,7 +36,7 @@ builder.Services.AddScoped<PasswordHasher<User>>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("email-config"));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
-builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly, includeInternalTypes: true);
+builder.Services.AddValidatorsFromAssembly(typeof(RegisterDtoValidator).Assembly, includeInternalTypes: true);
 builder.Services.AddIdentity<User, IdentityRole>(opt =>
 {
     opt.Password.RequireDigit = true;
