@@ -19,11 +19,13 @@ namespace Application.Services;
 
 public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options
     , PasswordHasher<User> passwordHasher, ICodeVerificationService _codeVerificationService
-    , IValidator<RegisterDto> _registerValidator) : IAuthenticationService
+    , IValidator<RegisterDto> _registerValidator, IValidator<LoginDto> _loginValidator) : IAuthenticationService
 {
     public async Task<Result<AuthResponseDto>> Login(LoginDto loginDto)
     {
-
+        var validationResult = await _loginValidator.ValidateAsync(loginDto);
+        if (!validationResult.IsValid)
+            return validationResult.ToFailure<AuthResponseDto>();
 
         var user = await _userManager.FindByEmailAsync(loginDto.Email);
         if (user == null || !await _userManager.CheckPasswordAsync(user, loginDto.Password))
