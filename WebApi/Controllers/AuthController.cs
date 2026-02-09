@@ -2,6 +2,7 @@
 using Application.Dtos;
 using Application.ServiceAbstractions;
 using Application.Shared.Errors;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -12,25 +13,31 @@ namespace WebApi.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 
-public class AuthController(IAuthenticationService _authenticationService) : ControllerBase
+public class AuthController(IAuthenticationService authenticationService,
+                      IValidator<LoginDto> loginDtoValidator,
+                      IValidator<RegisterDto> registerDtoValidator,
+                      IValidator<ResetPasswordDto> resetPasswordDtoValidator,
+                      IValidator<UpdatePasswordDto> updatePasswordDtoValidator) : BaseApiController
 {
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Error), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponseDto>> Login([FromForm] LoginDto loginDto)
     {
-        var authResponse = await _authenticationService.Login(loginDto);
-
-
+        // validation 
+        var validation = await ExecuteWithValidation(loginDtoValidator, loginDto);
+        if (!validation.IsSuccess)
+            return HandleFailure(validation.ErrorsList);
+        // business logic
+        var authResponse = await authenticationService.Login(loginDto);
         return authResponse.Map<ActionResult<AuthResponseDto>>(
-             onSuccess: result =>
-             {
-                 SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
-                 return Ok(result);
-             },
-                onFailure: error => HandleFailure(error)
+            onSuccess: result =>
+            {
+                SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
+                return Ok(result);
+            },
+            onFailure: error => HandleFailure(error)
         );
-
     }
 
     [HttpPost("register")]
@@ -39,16 +46,20 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AuthResponseDto>> Register([FromForm] RegisterDto registerDto)
     {
-        var authResponse = await _authenticationService.Register(registerDto);
-
+        // validation
+        var validation = await ExecuteWithValidation(registerDtoValidator, registerDto);
+        if (!validation.IsSuccess)
+            return HandleFailure(validation.ErrorsList);
+        // business logic
+        var authResponse = await authenticationService.Register(registerDto);
         return authResponse.Map<ActionResult<AuthResponseDto>>(
-              onSuccess: result =>
-              {
+            onSuccess: result =>
+            {
 
-                  SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
-                  return Ok(result);
-              },
-              onFailure: error => HandleFailure(error)
+                SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
+                return Ok(result);
+            },
+            onFailure: error => HandleFailure(error)
         );
     }
 
@@ -58,7 +69,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
     public async Task<ActionResult<AuthResponseDto>> RefreshToken()
     {
         var refreshToken = Request.Cookies["refreshToken"];
-        var authResponse = await _authenticationService.GenerateNewTokenAsync(refreshToken!);
+        var authResponse = await authenticationService.GenerateNewTokenAsync(refreshToken!);
         return authResponse.Map<ActionResult<AuthResponseDto>>(
               onSuccess: result =>
               {
@@ -82,7 +93,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
         if (string.IsNullOrWhiteSpace(refreshToken))
             return BadRequest(AuthErrors.InvalidRefreshToken);
 
-        var result = await _authenticationService.RevokeTokenAsync(refreshToken!);
+        var result = await authenticationService.RevokeTokenAsync(refreshToken!);
 
         return result.Map<ActionResult<BaseToReturnDto>>(
             _ => Ok(result),
@@ -96,8 +107,13 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
     [ProducesResponseType(typeof(Error), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<BaseToReturnDto>> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
     {
+        // validation
+        var validation = await ExecuteWithValidation(resetPasswordDtoValidator, resetPasswordDto);
+        if (!validation.IsSuccess)
+            return HandleFailure(validation.ErrorsList);
+        // business logic
         var email = User.FindFirstValue(ClaimTypes.Email);
-        var result = await _authenticationService.ResetPasswordAsync(resetPasswordDto, email);
+        var result = await authenticationService.ResetPasswordAsync(resetPasswordDto, email);
         return result.Map<ActionResult<BaseToReturnDto>>(
             onSuccess: _ => Ok(result),
             onFailure: error => HandleFailure(error)
@@ -109,7 +125,7 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
     [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BaseToReturnDto>> ForgetPassword([FromBody] ForgetPasswordDto forgetPasswordDto)
     {
-        var result = await _authenticationService.ForgetPasswordAsync(forgetPasswordDto);
+        var result = await authenticationService.ForgetPasswordAsync(forgetPasswordDto);
         return result.Map<ActionResult<BaseToReturnDto>>(
             onSuccess: _ => Ok(result),
             onFailure: error => HandleFailure(error)
@@ -121,29 +137,18 @@ public class AuthController(IAuthenticationService _authenticationService) : Con
     [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<BaseToReturnDto>> UpdatePassword([FromBody] UpdatePasswordDto updatePasswordDto)
     {
-        var result = await _authenticationService.UpdatePasswordAsync(updatePasswordDto);
+        // validation
+        var validation = await ExecuteWithValidation(updatePasswordDtoValidator, updatePasswordDto);
+        if (!validation.IsSuccess)
+            return HandleFailure(validation.ErrorsList);
+        // business logic
+        var result = await authenticationService.UpdatePasswordAsync(updatePasswordDto);
         return result.Map<ActionResult<BaseToReturnDto>>(
             onSuccess: _ => Ok(result),
             onFailure: error => HandleFailure(error)
         );
     }
-    private ActionResult HandleFailure(IEnumerable<Error> errors)
-    {
-        var firstError = errors?.FirstOrDefault();
-        var errorCode = firstError?.Code ?? string.Empty;
 
-        var actionResult = errorCode switch
-        {
-            var code when code.Contains("NotFound") => NotFound(errors),
-            var code when code.Contains("AlreadyExist") => Conflict(errors),
-            var code when code.Contains("LockedOut") => StatusCode(StatusCodes.Status423Locked, errors),
-            var code when code.Contains("InvalidCredentials") || code.Contains("InvalidRefreshToken") ||
-            code.Contains("Unauthorized")
-                => Unauthorized(errors),
-            _ => BadRequest(errors)
-        };
-        return actionResult;
-    }
     private void SetRefreshTokenInCookie(string refreshToken, DateTime expiresOn)
     {
         var cookieOptions = new CookieOptions
