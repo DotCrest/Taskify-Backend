@@ -20,7 +20,8 @@ namespace Application.Services;
 public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options
     , PasswordHasher<User> passwordHasher, ICodeVerificationService _codeVerificationService
     , IValidator<RegisterDto> _registerValidator, IValidator<LoginDto> _loginValidator
-    , IValidator<ResetPasswordDto> _resetPasswordValidator) : IAuthenticationService
+    , IValidator<ResetPasswordDto> _resetPasswordValidator
+    , IValidator<UpdatePasswordDto> _updatePasswordValidator) : IAuthenticationService
 {
     public async Task<Result<AuthResponseDto>> Login(LoginDto loginDto)
     {
@@ -263,6 +264,9 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
     }
     public async Task<Result<BaseToReturnDto>> UpdatePasswordAsync(UpdatePasswordDto updatePasswordDto)
     {
+        var validationResult = await _updatePasswordValidator.ValidateAsync(updatePasswordDto);
+        if (!validationResult.IsValid)
+            return validationResult.ToFailure<BaseToReturnDto>();
         var user = await _userManager.FindByEmailAsync(updatePasswordDto.Email);
         if (user is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
