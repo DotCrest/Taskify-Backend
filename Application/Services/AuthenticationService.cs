@@ -1,12 +1,10 @@
 ﻿using Application.Common.Errors;
 using Application.Dtos;
-using Application.Extentions;
 using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Errors;
 using Domain.Models;
 using Domain.Options;
-using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,18 +15,11 @@ using System.Security.Cryptography;
 using System.Text;
 namespace Application.Services;
 
-public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options
-    , PasswordHasher<User> passwordHasher, ICodeVerificationService _codeVerificationService
-    , IValidator<RegisterDto> _registerValidator, IValidator<LoginDto> _loginValidator
-    , IValidator<ResetPasswordDto> _resetPasswordValidator
-    , IValidator<UpdatePasswordDto> _updatePasswordValidator) : IAuthenticationService
+public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options,
+                                   PasswordHasher<User> passwordHasher, ICodeVerificationService _codeVerificationService) : IAuthenticationService
 {
     public async Task<Result<AuthResponseDto>> Login(LoginDto loginDto)
     {
-        var validationResult = await _loginValidator.ValidateAsync(loginDto);
-        if (!validationResult.IsValid)
-            return validationResult.ToFailure<AuthResponseDto>();
-
         var user = await _userManager.FindByEmailAsync(loginDto.Email);
         if (user == null || !await _userManager.CheckPasswordAsync(user, loginDto.Password))
         {
@@ -73,9 +64,6 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
     public async Task<Result<AuthResponseDto>> Register(RegisterDto registerDto)
     {
-        var validationResult = await _registerValidator.ValidateAsync(registerDto);
-        if (!validationResult.IsValid)
-            return validationResult.ToFailure<AuthResponseDto>();
         if (await _userManager.FindByEmailAsync(registerDto.Email) is not null)
         {
 
@@ -227,9 +215,6 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
     public async Task<Result<BaseToReturnDto>> ResetPasswordAsync(ResetPasswordDto resetPasswordDto, string email)
     {
-        var validationResult = await _resetPasswordValidator.ValidateAsync(resetPasswordDto);
-        if (!validationResult.IsValid)
-            return validationResult.ToFailure<BaseToReturnDto>();
         var user = await _userManager.FindByEmailAsync(email);
         var IsPasswordCorrect = await _userManager.CheckPasswordAsync(user, resetPasswordDto.OldPassword);
         if (!IsPasswordCorrect)
@@ -264,9 +249,6 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
     }
     public async Task<Result<BaseToReturnDto>> UpdatePasswordAsync(UpdatePasswordDto updatePasswordDto)
     {
-        var validationResult = await _updatePasswordValidator.ValidateAsync(updatePasswordDto);
-        if (!validationResult.IsValid)
-            return validationResult.ToFailure<BaseToReturnDto>();
         var user = await _userManager.FindByEmailAsync(updatePasswordDto.Email);
         if (user is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
