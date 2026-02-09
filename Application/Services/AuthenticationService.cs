@@ -248,12 +248,12 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
     }
 
-    public async Task<Result<BaseToReturnDto>> ForgetPasswordAsync(string email)
+    public async Task<Result<BaseToReturnDto>> ForgetPasswordAsync(ForgetPasswordDto forgetPasswordDto)
     {
-        var user = await _userManager.FindByEmailAsync(email);
+        var user = await _userManager.FindByEmailAsync(forgetPasswordDto.Email);
         if (user is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
-        await _codeVerificationService.SendCode(email);
+        await _codeVerificationService.SendCode(forgetPasswordDto.Email);
 
         var baseToReturnDto = new BaseToReturnDto()
         {
