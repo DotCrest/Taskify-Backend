@@ -1,11 +1,12 @@
 ﻿using Application.Common.Errors;
 using Application.Dtos;
+using Application.Extentions;
 using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Errors;
 using Domain.Models;
-
 using Domain.Options;
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,7 +18,8 @@ using System.Text;
 namespace Application.Services;
 
 public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options
-    , PasswordHasher<User> passwordHasher, ICodeVerificationService _codeVerificationService) : IAuthenticationService
+    , PasswordHasher<User> passwordHasher, ICodeVerificationService _codeVerificationService
+    , IValidator<RegisterDto> _registerValidator) : IAuthenticationService
 {
     public async Task<Result<AuthResponseDto>> Login(LoginDto loginDto)
     {
@@ -67,7 +69,9 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
     public async Task<Result<AuthResponseDto>> Register(RegisterDto registerDto)
     {
-
+        var validationResult = await _registerValidator.ValidateAsync(registerDto);
+        if (!validationResult.IsValid)
+            return validationResult.ToFailure<AuthResponseDto>();
         if (await _userManager.FindByEmailAsync(registerDto.Email) is not null)
         {
 
