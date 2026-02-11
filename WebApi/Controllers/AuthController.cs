@@ -115,7 +115,7 @@ public class AuthController(IAuthenticationService authenticationService,
         var email = User.FindFirstValue(ClaimTypes.Email);
         var result = await authenticationService.ResetPasswordAsync(resetPasswordDto, email);
         return result.Map<ActionResult<BaseToReturnDto>>(
-            onSuccess: _ => Ok(result),
+            onSuccess: _ => Ok(result.Value),
             onFailure: error => HandleFailure(error)
             );
     }
@@ -127,7 +127,7 @@ public class AuthController(IAuthenticationService authenticationService,
     {
         var result = await authenticationService.ForgetPasswordAsync(forgetPasswordDto);
         return result.Map<ActionResult<BaseToReturnDto>>(
-            onSuccess: _ => Ok(result),
+            onSuccess: _ => Ok(result.Value),
             onFailure: error => HandleFailure(error)
         );
     }
@@ -144,7 +144,7 @@ public class AuthController(IAuthenticationService authenticationService,
         // business logic
         var result = await authenticationService.UpdatePasswordAsync(updatePasswordDto);
         return result.Map<ActionResult<BaseToReturnDto>>(
-            onSuccess: _ => Ok(result),
+            onSuccess: _ => Ok(result.Value),
             onFailure: error => HandleFailure(error)
         );
     }
