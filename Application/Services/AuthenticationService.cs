@@ -193,11 +193,6 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
         return Result<BaseToReturnDto>.Success(baseToReturnDto);
     }
-
-
-
-
-
     private RefeshToken CreateRefreshToken()
     {
         var randomNumber = new byte[32];
@@ -238,13 +233,7 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         var user = await _userManager.FindByEmailAsync(forgetPasswordDto.Email);
         if (user is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
-        await _codeVerificationService.SendCode(forgetPasswordDto.Email);
-
-        var baseToReturnDto = new BaseToReturnDto()
-        {
-            IsSuccess = true,
-            Message = "Verification code sent to your email."
-        };
+        var baseToReturnDto = await _codeVerificationService.SendCode(forgetPasswordDto.Email);
         return Result<BaseToReturnDto>.Success(baseToReturnDto);
     }
     public async Task<Result<BaseToReturnDto>> UpdatePasswordAsync(UpdatePasswordDto updatePasswordDto)
