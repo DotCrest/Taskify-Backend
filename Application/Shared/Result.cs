@@ -4,6 +4,7 @@ namespace Application.Shared;
 
 public class Result<T>
 {
+
     private Result(T value)
     {
         Value = value;

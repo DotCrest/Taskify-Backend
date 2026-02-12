@@ -1,4 +1,4 @@
-﻿using Application.Dtos;
+﻿using Application.Dtos.AuthenticationDtos;
 using Application.ServiceAbstractions;
 using Microsoft.AspNetCore.Mvc;
 
