@@ -1,5 +1,5 @@
 ﻿using Application.Common.Errors;
-using Application.Dtos;
+using Application.Dtos.AuthenticationDtos;
 using Application.ServiceAbstractions;
 using Application.Shared.Errors;
 using FluentValidation;
@@ -31,10 +31,10 @@ public class AuthController(IAuthenticationService authenticationService,
         // business logic
         var authResponse = await authenticationService.Login(loginDto);
         return authResponse.Map<ActionResult<AuthResponseDto>>(
-            onSuccess: result =>
+            onSuccess: data =>
             {
                 SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
-                return Ok(result);
+                return Ok(data);
             },
             onFailure: error => HandleFailure(error)
         );
@@ -53,11 +53,11 @@ public class AuthController(IAuthenticationService authenticationService,
         // business logic
         var authResponse = await authenticationService.Register(registerDto);
         return authResponse.Map<ActionResult<AuthResponseDto>>(
-            onSuccess: result =>
+            onSuccess: data =>
             {
 
                 SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
-                return Ok(result);
+                return Ok(data);
             },
             onFailure: error => HandleFailure(error)
         );
@@ -71,14 +71,14 @@ public class AuthController(IAuthenticationService authenticationService,
         var refreshToken = Request.Cookies["refreshToken"];
         var authResponse = await authenticationService.GenerateNewTokenAsync(refreshToken!);
         return authResponse.Map<ActionResult<AuthResponseDto>>(
-              onSuccess: result =>
+              onSuccess: data =>
               {
-                  if (!string.IsNullOrEmpty(result.RefreshToken))
+                  if (!string.IsNullOrEmpty(data.RefreshToken))
                   {
 
-                      SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
+                      SetRefreshTokenInCookie(data.RefreshToken, data.RefreshTokenExpiration);
                   }
-                  return Ok(result);
+                  return Ok(data);
               },
               onFailure: error => HandleFailure(error)
         );
@@ -96,7 +96,7 @@ public class AuthController(IAuthenticationService authenticationService,
         var result = await authenticationService.RevokeTokenAsync(refreshToken!);
 
         return result.Map<ActionResult<BaseToReturnDto>>(
-            _ => Ok(result),
+            data => Ok(data),
             error => HandleFailure(error)
         );
     }
@@ -115,7 +115,7 @@ public class AuthController(IAuthenticationService authenticationService,
         var email = User.FindFirstValue(ClaimTypes.Email);
         var result = await authenticationService.ResetPasswordAsync(resetPasswordDto, email);
         return result.Map<ActionResult<BaseToReturnDto>>(
-            onSuccess: _ => Ok(result.Value),
+            onSuccess: data => Ok(data),
             onFailure: error => HandleFailure(error)
             );
     }
@@ -127,7 +127,7 @@ public class AuthController(IAuthenticationService authenticationService,
     {
         var result = await authenticationService.ForgetPasswordAsync(forgetPasswordDto);
         return result.Map<ActionResult<BaseToReturnDto>>(
-            onSuccess: _ => Ok(result.Value),
+            onSuccess: data => Ok(data),
             onFailure: error => HandleFailure(error)
         );
     }
@@ -144,7 +144,7 @@ public class AuthController(IAuthenticationService authenticationService,
         // business logic
         var result = await authenticationService.UpdatePasswordAsync(updatePasswordDto);
         return result.Map<ActionResult<BaseToReturnDto>>(
-            onSuccess: _ => Ok(result.Value),
+            onSuccess: data => Ok(data),
             onFailure: error => HandleFailure(error)
         );
     }
