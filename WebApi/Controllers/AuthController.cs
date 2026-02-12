@@ -33,7 +33,7 @@ public class AuthController(IAuthenticationService authenticationService,
         return authResponse.Map<ActionResult<AuthResponseDto>>(
             onSuccess: data =>
             {
-                SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
+                SetRefreshTokenInCookie(data.RefreshToken, data.RefreshTokenExpiration);
                 return Ok(data);
             },
             onFailure: error => HandleFailure(error)
@@ -56,7 +56,7 @@ public class AuthController(IAuthenticationService authenticationService,
             onSuccess: data =>
             {
 
-                SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
+                SetRefreshTokenInCookie(data.RefreshToken, data.RefreshTokenExpiration);
                 return Ok(data);
             },
             onFailure: error => HandleFailure(error)
