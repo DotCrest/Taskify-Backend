@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿using Application.Dtos.AuthenticationDtos;
+=======
+﻿using Application.Dtos;
+>>>>>>> develop
 using FluentValidation;
 
 namespace Application.Validators.AuthenticationValidators;

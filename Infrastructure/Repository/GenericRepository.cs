@@ -37,7 +37,9 @@ namespace Infrastructure.Repository
             _dbSet.Remove(entity);
         }
 
-
-
+        public async Task BulkDeleteAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            await _dbSet.Where(predicate).ExecuteDeleteAsync(cancellationToken);
+        }
     }
 }
