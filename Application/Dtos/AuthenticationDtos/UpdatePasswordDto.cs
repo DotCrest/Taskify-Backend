@@ -1,4 +1,4 @@
-﻿namespace Application.Dtos
+﻿namespace Application.Dtos.AuthenticationDtos
 {
     public class UpdatePasswordDto
     {

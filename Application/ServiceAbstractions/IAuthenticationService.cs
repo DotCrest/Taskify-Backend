@@ -1,4 +1,5 @@
 ﻿using Application.Dtos;
+using Application.Dtos.AuthenticationDtos;
 using Application.Shared;
 
 namespace Application.ServiceAbstractions;

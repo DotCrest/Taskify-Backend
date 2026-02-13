@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Application.Dtos;
+namespace Application.Dtos.AuthenticationDtos;
 
 public class AuthResponseDto
 {

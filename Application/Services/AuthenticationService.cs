@@ -1,5 +1,6 @@
 ﻿using Application.Common.Errors;
 using Application.Dtos;
+using Application.Dtos.AuthenticationDtos;
 using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Errors;
