@@ -20,6 +20,8 @@ namespace Infrastructure.Specificatins
                 query = query.OrderBy(specification.OrderBy);
             if (specification.OrderByDescending != null)
                 query = query.OrderByDescending(specification.OrderByDescending);
+            if (specification.IsPaginated)
+                query = query.Skip(specification.Skip).Take(specification.Take);
             return query;
         }
     }
