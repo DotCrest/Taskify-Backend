@@ -33,6 +33,9 @@ namespace Infrastructure.Repository
         {
             return await _dbSet.Where(predicate).ToListAsync();
         }
+        public async Task<IEnumerable<T>> FindAll(BaseSpecification<T> specification)
+            => await SpecificationEvaluator.GetQuery(context.Set<T>(), specification).ToListAsync();
+
 
         public async Task AddAsync(T entity)
         {
