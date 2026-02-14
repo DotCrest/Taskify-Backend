@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts;
 using Infrastructure.context;
+using Infrastructure.Specificatins;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -12,9 +13,17 @@ namespace Infrastructure.Repository
         {
             return await _dbSet.ToListAsync();
         }
+        public async Task<IEnumerable<T>> GetAllAsync(BaseSpecification<T> specification)
+        {
+            return await SpecificationEvaluator.GetQuery(context.Set<T>(), specification).ToListAsync();
+        }
         public async Task<T?> GetByIdAsync(int id)
         {
             return await _dbSet.FindAsync(id);
+        }
+        public async Task<T?> GetByIdAsync(BaseSpecification<T> specification)
+        {
+            return await SpecificationEvaluator.GetQuery(context.Set<T>(), specification).FirstOrDefaultAsync();
         }
         public Task<T?> Find(Expression<Func<T, bool>> predicate)
         {
@@ -24,6 +33,7 @@ namespace Infrastructure.Repository
         {
             return await _dbSet.Where(predicate).ToListAsync();
         }
+
         public async Task AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
