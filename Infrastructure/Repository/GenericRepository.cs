@@ -36,7 +36,8 @@ namespace Infrastructure.Repository
         public async Task<IEnumerable<T>> FindAll(BaseSpecification<T> specification)
             => await SpecificationEvaluator.GetQuery(context.Set<T>(), specification).ToListAsync();
 
-
+        public async Task<int> CountAsync(BaseSpecification<T> specification)
+            => await SpecificationEvaluator.GetQuery(context.Set<T>(), specification).CountAsync();
         public async Task AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
