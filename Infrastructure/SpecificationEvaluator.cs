@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Domain.Contracts;
+using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Specificatins
+namespace Infrastructure
 {
     public static class SpecificationEvaluator
     {
         public static IQueryable<TEntity> GetQuery<TEntity>(IQueryable<TEntity> inputQuery,
-            BaseSpecification<TEntity> specification) where TEntity : class
+            ISpecification<TEntity> specification) where TEntity : class
         {
             var query = inputQuery;
             if (specification.Criteria != null)
