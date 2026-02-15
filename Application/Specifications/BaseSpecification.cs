@@ -1,7 +1,7 @@
 ﻿using Domain.Contracts;
 using System.Linq.Expressions;
 
-namespace Application.Specificatins
+namespace Application.Specifications
 {
     public abstract class BaseSpecification<TEntity> : ISpecification<TEntity>
         where TEntity : class
