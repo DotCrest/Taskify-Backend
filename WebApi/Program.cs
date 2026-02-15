@@ -41,6 +41,7 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ICodeVerificationService, CodeVerificationService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IWorkSpaceMemberService, WorkSpaceMemberService>();
 builder.Services.AddScoped<PasswordHasher<User>>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("email-config"));
