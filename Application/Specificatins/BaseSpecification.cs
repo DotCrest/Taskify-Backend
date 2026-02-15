@@ -1,8 +1,9 @@
-﻿using System.Linq.Expressions;
+﻿using Domain.Contracts;
+using System.Linq.Expressions;
 
-namespace Infrastructure.Specificatins
+namespace Application.Specificatins
 {
-    public abstract class BaseSpecification<TEntity>
+    public abstract class BaseSpecification<TEntity> : ISpecification<TEntity>
         where TEntity : class
     {
         protected BaseSpecification(Expression<Func<TEntity, bool>> criteria)
