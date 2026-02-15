@@ -18,4 +18,5 @@ public class User : IdentityUser
     // Relations: Many-to-Many => relationships with (Space, Workspace, Quests)
     public ICollection<SpaceMember> SpaceMembers { get; set; } = [];
     public ICollection<WorkspaceMember> WorkspaceMembers { get; set; } = [];
+    public ICollection<RefeshToken>? RefeshTokens { get; set; }
 }

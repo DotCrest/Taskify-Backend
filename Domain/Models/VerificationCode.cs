@@ -6,5 +6,5 @@ public class VerificationCode
     public string Code { get; set; } = null!;
     public string Email { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
-    public bool IsActive => DateTime.Now < CreatedAt.AddMinutes(10);
+    public bool IsActive => DateTime.UtcNow < CreatedAt.AddMinutes(10);
 }
