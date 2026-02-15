@@ -13,10 +13,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +40,7 @@ builder.Services.AddTransient(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ICodeVerificationService, CodeVerificationService>();
+builder.Services.AddScoped<IWorkSpaceMemberService, WorkSpaceMemberService>();
 builder.Services.AddScoped<PasswordHasher<User>>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("email-config"));
