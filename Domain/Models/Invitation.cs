@@ -6,6 +6,7 @@ public class Invitation
     public string ReceiverEmail { get; set; } = default!;
     public InvitationStatusEnum Status { get; set; }
     public string ReceiverRole { get; set; } = default!;
+    public string Token { get; set; } = default!;
 
     // Relations: One to Many => relationships with (Space, Workspace, User)
     public string? SenderId { get; set; } = default!;
