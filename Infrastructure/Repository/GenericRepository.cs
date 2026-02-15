@@ -1,6 +1,6 @@
 ﻿using Domain.Contracts;
 using Infrastructure.context;
-using Infrastructure.Specificatins;
+
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
