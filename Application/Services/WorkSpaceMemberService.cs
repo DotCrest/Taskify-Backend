@@ -1,5 +1,5 @@
 ﻿using Application.ServiceAbstractions;
-using Application.Specificatins.WorkSpaceMemberSpecifications;
+using Application.Specifications.WorkSpaceMemberSpecifications;
 using Domain.Contracts;
 using Domain.Models;
 
