@@ -13,7 +13,7 @@ namespace Infrastructure.Repository
         {
             return await _dbSet.ToListAsync();
         }
-        public async Task<IEnumerable<T>> GetAllAsync(BaseSpecification<T> specification)
+        public async Task<IEnumerable<T>> GetAllAsync(ISpecification<T> specification)
         {
             return await SpecificationEvaluator.GetQuery(context.Set<T>(), specification).ToListAsync();
         }
@@ -21,7 +21,7 @@ namespace Infrastructure.Repository
         {
             return await _dbSet.FindAsync(id);
         }
-        public async Task<T?> GetByIdAsync(BaseSpecification<T> specification)
+        public async Task<T?> GetByIdAsync(ISpecification<T> specification)
         {
             return await SpecificationEvaluator.GetQuery(context.Set<T>(), specification).FirstOrDefaultAsync();
         }
@@ -33,10 +33,10 @@ namespace Infrastructure.Repository
         {
             return await _dbSet.Where(predicate).ToListAsync();
         }
-        public async Task<IEnumerable<T>> FindAll(BaseSpecification<T> specification)
+        public async Task<IEnumerable<T>> FindAll(ISpecification<T> specification)
             => await SpecificationEvaluator.GetQuery(context.Set<T>(), specification).ToListAsync();
 
-        public async Task<int> CountAsync(BaseSpecification<T> specification)
+        public async Task<int> CountAsync(ISpecification<T> specification)
             => await SpecificationEvaluator.GetQuery(context.Set<T>(), specification).CountAsync();
         public async Task AddAsync(T entity)
         {
