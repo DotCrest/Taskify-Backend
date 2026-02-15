@@ -5,7 +5,7 @@ namespace Infrastructure
 {
     public static class SpecificationEvaluator
     {
-        public static IQueryable<TEntity> GetQuery<TEntity>(IQueryable<TEntity> inputQuery,
+        public static IQueryable<TEntity> CreateQuery<TEntity>(IQueryable<TEntity> inputQuery,
             ISpecification<TEntity> specification) where TEntity : class
         {
             var query = inputQuery;
