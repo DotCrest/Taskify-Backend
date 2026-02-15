@@ -1,7 +1,6 @@
-﻿using Application.Specifications;
-using Domain.Models;
+﻿using Domain.Models;
 
-namespace Application.Specificatins.WorkSpaceMemberSpecifications;
+namespace Application.Specifications.WorkSpaceMemberSpecifications;
 
 public class WorkSpaceMemberSpecification : BaseSpecification<WorkspaceMember>
 {
