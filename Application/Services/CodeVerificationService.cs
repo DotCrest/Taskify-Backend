@@ -9,11 +9,11 @@ using System.Security.Cryptography;
 
 namespace Application.Services;
 
-public class CodeVerificationService(IUnitOfWork<VerificationCode> unitOfWork,
+public class CodeVerificationService(IUnitOfWork unitOfWork,
                                  IEmailService emailService,
-                                 IGenericRepository<VerificationCode> verificationCodeRepo,
                                  ILogger<CodeVerificationService> logger) : ICodeVerificationService
 {
+    private readonly IGenericRepository<VerificationCode> verificationCodeRepo = unitOfWork.Repository<VerificationCode>();
     public async Task<BaseToReturnDto> SendCode(string email)
     {
         // check if code already exists for email and is active
