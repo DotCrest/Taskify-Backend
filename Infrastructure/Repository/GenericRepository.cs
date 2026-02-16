@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts;
 using Infrastructure.context;
+
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -16,14 +17,6 @@ namespace Infrastructure.Repository
         {
             return await _dbSet.FindAsync(id);
         }
-        public Task<T?> Find(Expression<Func<T, bool>> predicate)
-        {
-            return _dbSet.FirstOrDefaultAsync(predicate);
-        }
-        public async Task<IEnumerable<T>> FindAll(Expression<Func<T, bool>> predicate)
-        {
-            return await _dbSet.Where(predicate).ToListAsync();
-        }
         public async Task AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
@@ -36,8 +29,26 @@ namespace Infrastructure.Repository
         {
             _dbSet.Remove(entity);
         }
+        public Task<T?> Find(Expression<Func<T, bool>> predicate)
+        {
+            return _dbSet.FirstOrDefaultAsync(predicate);
+        }
+        public async Task<IEnumerable<T>> FindAll(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.Where(predicate).ToListAsync();
+        }
+        public Task<T?> Find(ISpecification<T> specification)
+        {
+            return SpecificationEvaluator.CreateQuery(context.Set<T>(), specification).FirstOrDefaultAsync();
+        }
+        public async Task<IEnumerable<T>> FindAll(ISpecification<T> specification)
+            => await SpecificationEvaluator.CreateQuery(context.Set<T>(), specification).ToListAsync();
 
-
-
+        public async Task<int> CountAsync(ISpecification<T> specification)
+            => await SpecificationEvaluator.CreateQuery(context.Set<T>(), specification).CountAsync();
+        public async Task BulkDeleteAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+        {
+            await _dbSet.Where(predicate).ExecuteDeleteAsync(cancellationToken);
+        }
     }
 }
