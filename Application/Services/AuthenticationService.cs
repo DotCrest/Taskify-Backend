@@ -93,7 +93,7 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
             return Result<AuthResponseDto>
                 .Failure(result.Errors.Select(x => new Error(x.Code, x.Description)).ToList());
         }
-        var roles = await _userManager.AddToRoleAsync(user, "User");
+        var roles = await _userManager.AddToRoleAsync(user, registerDto.Role);
         var jwtToken = await CreateTokenAsync(user);
         var refreshToken = CreateRefreshToken();
         user.RefeshTokens.Add(refreshToken);
@@ -107,7 +107,7 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
             Username = user.UserName,
             Email = user.Email,
             Message = "User Registered Successfully",
-            Roles = new List<string>() { "User" },
+            Roles = new List<string>() { registerDto.Role },
             RefreshToken = refreshToken.Token,
             RefreshTokenExpiration = refreshToken.ExpiresOn
         };
