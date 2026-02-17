@@ -107,15 +107,15 @@ public class InvitationService(IUnitOfWork unitOfWork,
         if (workspace is null)
             return Result<BaseToReturnDto>.Failure(WorkspaceErrors.NotFound);
         // add the user to the workspace members
-        var workspaceMember = new WorkspaceMember
-        {
-            UserId = user.Id,
-            WorkspaceId = invitation.WorkspaceId,
-            Role = invitation.ReceiverRole,
-            JoinedAt = DateTime.UtcNow
-        };
-        await workSpaceMemberService.AddWorkSpaceMemberAsync(workspaceMember);
-        await UpdateInvitationStatus(invitation, InvitationStatusEnum.Accepted);
+            var workspaceMember = new WorkspaceMember
+            {
+                UserId = user.Id,
+                WorkspaceId = invitation.WorkspaceId,
+                Role = invitation.ReceiverRole,
+                JoinedAt = DateTime.UtcNow
+            };
+            await workSpaceMemberService.AddWorkSpaceMemberAsync(workspaceMember);
+            await UpdateInvitationStatus(invitation, InvitationStatusEnum.Accepted);
         // return the result
         var result = new BaseToReturnDto { IsSuccess = true, Message = "Invitation accepted successfully!" };
         return Result<BaseToReturnDto>.Success(result);
