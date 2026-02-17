@@ -15,6 +15,7 @@ public class InvitationService(IUnitOfWork unitOfWork,
                            IAccountService accountService,
                            IEmailService emailService,
                            IWorkSpaceService workSpaceService,
+                           IWorkSpaceMemberService workSpaceMemberService,
                            IOptions<UrlOptions> urlOptions) : IInvitationService
 {
     private readonly UrlOptions urlOptions = urlOptions.Value;
@@ -67,7 +68,6 @@ public class InvitationService(IUnitOfWork unitOfWork,
             Message = "Invitation sent successfully!"
         });
     }
-
     public async Task<Result<InviteValidationDto>> ValidateInvitationAsync(string token)
     {
         var invitation = await GetInvitationByToken(token);
@@ -97,6 +97,46 @@ public class InvitationService(IUnitOfWork unitOfWork,
         inviteValidationDto.IsUserRegistered = true;
         // return the result
         return Result<InviteValidationDto>.Success(inviteValidationDto);
+    }
+    public async Task<Result<BaseToReturnDto>> AcceptInvitationAsync(string token)
+    {
+        // get the invitation by the token
+        var invitation = await GetInvitationByToken(token);
+        // check if the invitation exists
+        if (invitation is null)
+            return Result<BaseToReturnDto>.Failure(InvitationErrors.InvalidToken);
+        // check if user exists
+        var user = await accountService.GetUserByEmailAsync(invitation.ReceiverEmail);
+        if (user is null)
+            return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
+        // check if workspace exists
+        var workspace = await workSpaceService.GetWorkSpaceById(invitation.WorkspaceId);
+        if (workspace is null)
+            return Result<BaseToReturnDto>.Failure(WorkspaceErrors.NotFound);
+        // check if the invitation is valid and not expired
+        if (invitation.Status == InvitationStatusEnum.Pending && invitation.IsActive)
+        {
+            var workspaceMember = new WorkspaceMember
+            {
+                UserId = user.Id,
+                WorkspaceId = invitation.WorkspaceId,
+                Role = invitation.ReceiverRole,
+                JoinedAt = DateTime.UtcNow
+            };
+            // add the user to the workspace with the role specified in the invitation
+            await workSpaceMemberService.AddWorkSpaceMemberAsync(workspaceMember);
+            await UpdateInvitationStatus(invitation, InvitationStatusEnum.Accepted);
+            return Result<BaseToReturnDto>.Success(new BaseToReturnDto
+            {
+                IsSuccess = true,
+                Message = "Invitation accepted successfully!"
+            });
+        }
+        else if (invitation.Status == InvitationStatusEnum.Accepted)
+            return Result<BaseToReturnDto>.Failure(InvitationErrors.AlreadyAccepted);
+        else
+            return Result<BaseToReturnDto>.Failure(InvitationErrors.Expired);
+        // return the result
     }
     private async Task<Invitation?> GetInvitationByToken(string token)
     {
