@@ -7,4 +7,5 @@ namespace Application.ServiceAbstractions;
 public interface IInvitationService
 {
     Task<Result<BaseToReturnDto>> SendInvitationAsync(SendInvitationDto sendInvitationDto, string senderId);
+    Task<Result<InviteValidationDto>> ValidateInvitationAsync(string token);
 }

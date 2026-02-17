@@ -68,6 +68,49 @@ public class InvitationService(IUnitOfWork unitOfWork,
             Message = "Invitation sent successfully!"
         });
     }
+
+    public async Task<Result<InviteValidationDto>> ValidateInvitationAsync(string token)
+    {
+        var invitation = await GetInvitationByToken(token);
+        if (invitation is null)
+            return Result<InviteValidationDto>.Failure(InvitationErrors.NotFound);
+        // check expiration of the invitation
+        if (!invitation.IsActive)
+        {
+            await UpdateInvitationStatus(invitation, InvitationStatusEnum.Expired);
+            return Result<InviteValidationDto>.Failure(InvitationErrors.Expired);
+        }
+        if (invitation.Status == InvitationStatusEnum.Accepted)
+            return Result<InviteValidationDto>.Failure(InvitationErrors.AlreadyAccepted);
+        var inviteValidationDto = new InviteValidationDto
+        {
+            ReceiverEmail = invitation.ReceiverEmail,
+            WorkspaceId = invitation.WorkspaceId,
+            WorkspaceName = invitation.Workspace.Name
+        };
+        // check if user registered with the email of the invitation
+        var user = await accountService.GetUserByEmailAsync(invitation.ReceiverEmail);
+        if (user is null)
+        {
+            inviteValidationDto.IsUserRegistered = false;
+            return Result<InviteValidationDto>.Success(inviteValidationDto);
+        }
+        inviteValidationDto.IsUserRegistered = true;
+        // return the result
+        return Result<InviteValidationDto>.Success(inviteValidationDto);
+    }
+    private async Task<Invitation?> GetInvitationByToken(string token)
+    {
+        var specification = new InvitationByTokenSpecification(token);
+        var invitation = await invitationRepo.Find(specification);
+        return invitation;
+    }
+    private async Task UpdateInvitationStatus(Invitation invitation, InvitationStatusEnum status)
+    {
+        invitation.Status = status;
+        invitationRepo.Update(invitation);
+        await unitOfWork.SaveAsync();
+    }
     private async Task<Invitation> CreateInvitation(SendInvitationDto sendInvitationDto, string senderId)
     {
         var token = Guid.NewGuid().ToString();
