@@ -16,7 +16,7 @@ namespace WebApi.Controllers;
 public class InvitationController(IInvitationService invitationService,
                                   IValidator<SendInvitationDto> sendInvitationValidator) : BaseApiController
 {
-    [Authorize(Role.Admin)]
+    [Authorize(Roles = Role.Admin)]
     [HttpPost("send-invitation")]
     [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
