@@ -47,4 +47,16 @@ public class InvitationController(IInvitationService invitationService,
             onFailure: err => HandleFailure(err)
         );
     }
+    [HttpPost("accept-invitation")]
+    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BaseToReturnDto>> AcceptInvitation([FromQuery] string token)
+    {
+        var result = await invitationService.AcceptInvitationAsync(token);
+        return result.Map<ActionResult<BaseToReturnDto>>(
+            onSuccess: res => Ok(res),
+            onFailure: err => HandleFailure(err)
+        );
+    }
 }
