@@ -107,18 +107,38 @@ public class InvitationService(IUnitOfWork unitOfWork,
         if (workspace is null)
             return Result<BaseToReturnDto>.Failure(WorkspaceErrors.NotFound);
         // add the user to the workspace members
-            var workspaceMember = new WorkspaceMember
-            {
-                UserId = user.Id,
-                WorkspaceId = invitation.WorkspaceId,
-                Role = invitation.ReceiverRole,
-                JoinedAt = DateTime.UtcNow
-            };
+        var workspaceMember = new WorkspaceMember
+        {
+            UserId = user.Id,
+            WorkspaceId = invitation.WorkspaceId,
+            Role = invitation.ReceiverRole,
+            JoinedAt = DateTime.UtcNow
+        };
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
             await workSpaceMemberService.AddWorkSpaceMemberAsync(workspaceMember);
-            await UpdateInvitationStatus(invitation, InvitationStatusEnum.Accepted);
+            UpdateInvitationStatus(invitation, InvitationStatusEnum.Accepted);
+            await unitOfWork.SaveAsync();
+        });
         // return the result
         var result = new BaseToReturnDto { IsSuccess = true, Message = "Invitation accepted successfully!" };
         return Result<BaseToReturnDto>.Success(result);
+    }
+    public async Task<Result<Invitation>> GetValidInvitationAsync(string token)
+    {
+        var invitation = await GetInvitationByToken(token);
+
+        if (invitation is null)
+            return Result<Invitation>.Failure(InvitationErrors.NotFound);
+        if (!invitation.IsActive)
+        {
+            UpdateInvitationStatus(invitation, InvitationStatusEnum.Expired);
+            return Result<Invitation>.Failure(InvitationErrors.Expired);
+        }
+        if (invitation.Status == InvitationStatusEnum.Accepted)
+            return Result<Invitation>.Failure(InvitationErrors.AlreadyAccepted);
+
+        return Result<Invitation>.Success(invitation);
     }
     private async Task<Invitation?> GetInvitationByToken(string token)
     {
@@ -126,11 +146,10 @@ public class InvitationService(IUnitOfWork unitOfWork,
         var invitation = await invitationRepo.Find(specification);
         return invitation;
     }
-    private async Task UpdateInvitationStatus(Invitation invitation, InvitationStatusEnum status)
+    private void UpdateInvitationStatus(Invitation invitation, InvitationStatusEnum status)
     {
         invitation.Status = status;
         invitationRepo.Update(invitation);
-        await unitOfWork.SaveAsync();
     }
     private async Task<Invitation> CreateInvitation(SendInvitationDto sendInvitationDto, string senderId)
     {
@@ -149,21 +168,5 @@ public class InvitationService(IUnitOfWork unitOfWork,
         // save the invitation in the database
         await unitOfWork.SaveAsync();
         return invitation;
-    }
-    public async Task<Result<Invitation>> GetValidInvitationAsync(string token)
-    {
-        var invitation = await GetInvitationByToken(token);
-
-        if (invitation is null)
-            return Result<Invitation>.Failure(InvitationErrors.NotFound);
-        if (!invitation.IsActive)
-        {
-            await UpdateInvitationStatus(invitation, InvitationStatusEnum.Expired);
-            return Result<Invitation>.Failure(InvitationErrors.Expired);
-        }
-        if (invitation.Status == InvitationStatusEnum.Accepted)
-            return Result<Invitation>.Failure(InvitationErrors.AlreadyAccepted);
-
-        return Result<Invitation>.Success(invitation);
     }
 }
