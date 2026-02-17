@@ -36,13 +36,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString"));
 });
-builder.Services.AddTransient(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
-builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ICodeVerificationService, CodeVerificationService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IWorkSpaceMemberService, WorkSpaceMemberService>();
 builder.Services.AddScoped<PasswordHasher<User>>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IWorkSpaceService, WorkSpaceService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("email-config"));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
 builder.Services.AddValidatorsFromAssembly(typeof(RegisterDtoValidator).Assembly, includeInternalTypes: true);
