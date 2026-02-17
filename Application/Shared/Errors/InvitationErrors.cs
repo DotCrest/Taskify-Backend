@@ -11,6 +11,8 @@ public class InvitationErrors
         new Error("Invitation.NotFound", "Invitation is not found");
     public static readonly Error Expired =
         new Error("Invitation.Expired", "Invitation has been expired");
+    public static readonly Error InvalidToken =
+        new Error("Invitation.Token", "Invitation token is invalid");
     public static readonly Error AlreadyAccepted =
         new Error("Invitation.AlreadyAccepted", "Invitation has been already accepted");
 }
