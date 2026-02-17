@@ -35,4 +35,16 @@ public class InvitationController(IInvitationService invitationService,
             onFailure: err => HandleFailure(err)
         );
     }
+    [HttpGet("validate-invitation")]
+    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<InviteValidationDto>> ValidateInvitation([FromQuery] string token)
+    {
+        var result = await invitationService.ValidateInvitationAsync(token);
+        return result.Map<ActionResult<InviteValidationDto>>(
+            onSuccess: res => Ok(res),
+            onFailure: err => HandleFailure(err)
+        );
+    }
 }
