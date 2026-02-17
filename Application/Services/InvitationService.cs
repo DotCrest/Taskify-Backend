@@ -146,7 +146,7 @@ public class InvitationService(IUnitOfWork unitOfWork,
         var invitation = await invitationRepo.Find(specification);
         return invitation;
     }
-    private void UpdateInvitationStatus(Invitation invitation, InvitationStatusEnum status)
+    public void UpdateInvitationStatus(Invitation invitation, InvitationStatusEnum status)
     {
         invitation.Status = status;
         invitationRepo.Update(invitation);
