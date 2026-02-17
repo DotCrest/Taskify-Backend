@@ -17,7 +17,6 @@ public class WorkSpaceMemberService(IUnitOfWork unitOfWork) : IWorkSpaceMemberSe
     public async Task AddWorkSpaceMemberAsync(WorkspaceMember workspaceMember)
     {
         await workSpaceMemberRepository.AddAsync(workspaceMember);
-        await unitOfWork.SaveAsync();
     }
 
 }
