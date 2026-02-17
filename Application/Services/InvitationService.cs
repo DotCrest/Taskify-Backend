@@ -1,5 +1,4 @@
-﻿using Application.Common.Errors;
-using Application.Dtos;
+﻿using Application.Dtos;
 using Application.Dtos.InvitationDtos;
 using Application.ServiceAbstractions;
 using Application.Shared;
@@ -27,9 +26,9 @@ public class InvitationService(IUnitOfWork unitOfWork,
         if (sender is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
         // check if the workspace exists
-        var IsWorkspaceExist = await workSpaceService.IsWorkSpaceExsist(sendInvitationDto.WorkspaceId);
-        if (!IsWorkspaceExist)
-            return Result<BaseToReturnDto>.Failure(new Error("Workspace.NotFound", "Workspace is not found!")); // TODO: create a new error in Workspace Errors for this case
+        var workspace = await workSpaceService.GetWorkSpaceById(sendInvitationDto.WorkspaceId);
+        if (workspace is null)
+            return Result<BaseToReturnDto>.Failure(WorkspaceErrors.NotFound);
         // if the sender has already sent an invitation to the same email and it's still pending
         var specification = new InvitationByReceiverSpecification(sendInvitationDto.ReceiverEmail, sendInvitationDto.WorkspaceId, InvitationStatusEnum.Pending);
         var existingInvitation = await invitationRepo.Find(specification);
@@ -49,7 +48,7 @@ public class InvitationService(IUnitOfWork unitOfWork,
                     </h1>
 
                     <p style=""font-size: 18px; line-height: 1.6; color: #475569; margin-bottom: 32px;"">
-                        you have been invited by {"SENDER NAME"} to join {"WORKSPACE NAME WILL BE HERE"}.
+                        you have been invited by {sender.Name} to join {workspace.Name}.
                         Click the button below to set up your account and get started:
                     </p>
 
