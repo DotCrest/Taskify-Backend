@@ -1,4 +1,5 @@
-﻿using Domain.Contracts;
+﻿using Domain.Constants;
+using Domain.Contracts;
 using Domain.Models;
 using Infrastructure.context;
 using Microsoft.AspNetCore.Identity;
@@ -21,7 +22,7 @@ public class DataSeeding(ApplicationDbContext _dbContext, RoleManager<IdentityRo
         }
         if (!_roleManager.Roles.Any())
         {
-            var roles = new[] { "Admin", "User" };
+            var roles = new[] { Role.Admin, Role.Member };
             foreach (var role in roles)
             {
                 await _roleManager.CreateAsync(new IdentityRole(role));
@@ -39,16 +40,16 @@ public class DataSeeding(ApplicationDbContext _dbContext, RoleManager<IdentityRo
         };
         var user = new User()
         {
-            UserName = "user",
-            Email = "User@gmail.com",
-            Name = "user",
+            UserName = "member",
+            Email = "member@gmail.com",
+            Name = "member",
             JoinedAt = DateTime.UtcNow,
             EmailConfirmed = true
         };
         await _userManager.CreateAsync(AdminUser, "Admin@123");
         await _userManager.CreateAsync(user, "User@123");
-        await _userManager.AddToRoleAsync(AdminUser, "Admin");
-        await _userManager.AddToRoleAsync(user, "User");
+        await _userManager.AddToRoleAsync(AdminUser, Role.Admin);
+        await _userManager.AddToRoleAsync(user, Role.Member);
 
 
     }
