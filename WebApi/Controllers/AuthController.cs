@@ -150,6 +150,27 @@ public class AuthController(IAuthenticationService authenticationService,
         );
     }
 
+    [HttpPost("register-invited")]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AuthResponseDto>> RegisterInvited([FromForm] RegisterDto registerDto, [FromQuery] string InvitationToken)
+    {
+        // validation
+        var validation = await ExecuteWithValidation(registerDtoValidator, registerDto);
+        if (!validation.IsSuccess)
+            return HandleFailure(validation.ErrorsList);
+        // business logic
+        var authResponse = await authenticationService.RegisterByInvitation(registerDto, InvitationToken);
+        return authResponse.Map<ActionResult<AuthResponseDto>>(
+            onSuccess: result =>
+            {
+                SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
+                return Ok(result);
+            },
+            onFailure: error => HandleFailure(error)
+        );
+    }
     private void SetRefreshTokenInCookie(string refreshToken, DateTime expiresOn)
     {
         var cookieOptions = new CookieOptions
