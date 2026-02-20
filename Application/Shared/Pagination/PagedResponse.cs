@@ -1,6 +1,6 @@
 ﻿namespace Application.Shared.Pagination;
 
-internal class PagedResponse<T> where T : class
+public class PagedResponse<T> where T : class
 {
     public IReadOnlyList<T> Data { get; init; } = [];
     public int PageNumber { get; init; }
