@@ -12,6 +12,6 @@ public interface IInvitationService
     Task<Result<InviteValidationDto>> ValidateInvitationAsync(string token);
     Task<Result<BaseToReturnDto>> AcceptInvitationAsync(string token);
     Task<Result<Invitation>> GetValidInvitationAsync(string token);
-    Task<Result<PagedResponse<InvitationDto>>> GetInvitationByStatus(GetInvitationDto getInvitationDto, QueryFilter queryFilter, string userId);
+    Task<Result<PagedResponse<InvitationDto>>> GetInvitationByStatusAsync(GetInvitationDto getInvitationDto, QueryFilter queryFilter, string userId);
     void UpdateInvitationStatus(Invitation invitation, InvitationStatusEnum status);
 }
