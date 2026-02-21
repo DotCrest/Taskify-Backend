@@ -158,22 +158,22 @@ public class InvitationService(IUnitOfWork unitOfWork,
 
         Enum.TryParse<InvitationStatusEnum>(getInvitationDto.Status, true, out var status);
         ISpecification<Invitation> specification;
+        ISpecification<Invitation> countSpecification;
         if (status == InvitationStatusEnum.Expired)
         {
             // has a custom specification to get the expired invitations
             specification = new ExpiredInvitationSpecification(queryFilter);
+            countSpecification = new ExpiredInvitationCountSpecification();
         }
         else
         {
             specification = new InvitationByStatusSpecification(status, queryFilter);
+            countSpecification = new InvitationByStatusCountSpecification(status);
         }
         var invitations = await invitationRepo.FindAll(specification);
-        // var totalRecords = invitations.Count(); 
-        // this will be incorrect because these are the invitations after pagination and we need the total count before pagination,
-        // to fix this I will create a new specification without pagination and get the count of it
-        // but before that I must go to feature/specification branch to add a CountAsync with ISpecification parameter to the generic repository
+        var totalRecords = await invitationRepo.CountAsync(countSpecification);
         var invitationsDtos = mapper.Map<IEnumerable<InvitationDto>>(invitations);
-        var pagedResponse = new PagedResponse<InvitationDto>(invitationsDtos, queryFilter.PageNumber, queryFilter.PageSize, totalRecords: 1); // to fix
+        var pagedResponse = new PagedResponse<InvitationDto>(invitationsDtos, queryFilter.PageNumber, queryFilter.PageSize, totalRecords);
         return Result<PagedResponse<InvitationDto>>.Success(pagedResponse);
     }
     private async Task<Invitation?> GetInvitationByToken(string token)
