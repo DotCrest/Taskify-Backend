@@ -3,7 +3,9 @@ using Application.Dtos.InvitationDtos;
 using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Errors;
+using Application.Shared.Pagination;
 using Application.Specifications.InvitationSpecification;
+using AutoMapper;
 using Domain.Contracts;
 using Domain.Models;
 using Domain.Settings;
@@ -16,7 +18,8 @@ public class InvitationService(IUnitOfWork unitOfWork,
                            IEmailService emailService,
                            IWorkSpaceService workSpaceService,
                            IWorkSpaceMemberService workSpaceMemberService,
-                           IOptions<UrlOptions> urlOptions) : IInvitationService
+                           IOptions<UrlOptions> urlOptions,
+                           IMapper mapper) : IInvitationService
 {
     private readonly UrlOptions urlOptions = urlOptions.Value;
     private readonly IGenericRepository<Invitation> invitationRepo = unitOfWork.Repository<Invitation>();
@@ -140,16 +143,44 @@ public class InvitationService(IUnitOfWork unitOfWork,
 
         return Result<Invitation>.Success(invitation);
     }
+    public void UpdateInvitationStatus(Invitation invitation, InvitationStatusEnum status)
+    {
+        invitation.Status = status;
+        invitationRepo.Update(invitation);
+    }
+    public async Task<Result<PagedResponse<InvitationDto>>> GetInvitationByStatusAsync(GetInvitationDto getInvitationDto, QueryFilter queryFilter, string userId)
+    {
+        var workspace = await workSpaceService.GetWorkSpaceById(getInvitationDto.WorkspaceId);
+        if (workspace is null)
+            return Result<PagedResponse<InvitationDto>>.Failure(WorkspaceErrors.NotFound);
+        if (workspace.OwnerId != userId)
+            return Result<PagedResponse<InvitationDto>>.Failure(WorkspaceErrors.AccessDenied);
+
+        Enum.TryParse<InvitationStatusEnum>(getInvitationDto.Status, true, out var status);
+        ISpecification<Invitation> specification;
+        if (status == InvitationStatusEnum.Expired)
+        {
+            // has a custom specification to get the expired invitations
+            specification = new ExpiredInvitationSpecification(queryFilter);
+        }
+        else
+        {
+            specification = new InvitationByStatusSpecification(status, queryFilter);
+        }
+        var invitations = await invitationRepo.FindAll(specification);
+        // var totalRecords = invitations.Count(); 
+        // this will be incorrect because these are the invitations after pagination and we need the total count before pagination,
+        // to fix this I will create a new specification without pagination and get the count of it
+        // but before that I must go to feature/specification branch to add a CountAsync with ISpecification parameter to the generic repository
+        var invitationsDtos = mapper.Map<IEnumerable<InvitationDto>>(invitations);
+        var pagedResponse = new PagedResponse<InvitationDto>(invitationsDtos, queryFilter.PageNumber, queryFilter.PageSize, totalRecords: 1); // to fix
+        return Result<PagedResponse<InvitationDto>>.Success(pagedResponse);
+    }
     private async Task<Invitation?> GetInvitationByToken(string token)
     {
         var specification = new InvitationByTokenSpecification(token);
         var invitation = await invitationRepo.Find(specification);
         return invitation;
-    }
-    public void UpdateInvitationStatus(Invitation invitation, InvitationStatusEnum status)
-    {
-        invitation.Status = status;
-        invitationRepo.Update(invitation);
     }
     private async Task<Invitation> CreateInvitation(SendInvitationDto sendInvitationDto, string senderId)
     {
@@ -169,4 +200,5 @@ public class InvitationService(IUnitOfWork unitOfWork,
         await unitOfWork.SaveAsync();
         return invitation;
     }
+
 }
