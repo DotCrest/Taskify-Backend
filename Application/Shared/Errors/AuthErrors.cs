@@ -16,5 +16,9 @@ namespace Application.Shared.Errors
             new Error("Auth.InvalidRefreshToken", "The refresh token is invalid");
         public static readonly Error UserNotFound =
             new Error("Auth.UserNotFound", "User not found");
+        public static readonly Error InvalidRole =
+            new Error("Auth.InvalidRole", "Invalid role specified!");
+        public static readonly Error InvalidInvitationEmail =
+            new Error("Auth.InvalidInvitationEmail", "Email mismatch! You must register with the email the invitation was sent to.");
     }
 }
