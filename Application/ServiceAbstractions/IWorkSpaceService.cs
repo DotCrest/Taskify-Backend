@@ -1,7 +1,9 @@
-﻿namespace Application.ServiceAbstractions
+﻿using Domain.Models;
+
+namespace Application.ServiceAbstractions
 {
     public interface IWorkSpaceService
     {
-        Task<bool> IsWorkSpaceExsist(int workSpaceId);
+        Task<Workspace?> GetWorkSpaceById(int workSpaceId);
     }
 }

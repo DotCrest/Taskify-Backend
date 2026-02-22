@@ -4,17 +4,13 @@ using Domain.Models;
 
 namespace Application.Services
 {
-    public class WorkSpaceService(IUnitOfWork<Workspace> unitOfWork) : IWorkSpaceService
+    public class WorkSpaceService(IUnitOfWork unitOfWork) : IWorkSpaceService
     {
-        private readonly IGenericRepository<Workspace> repo = unitOfWork.Repo;
-        public async Task<bool> IsWorkSpaceExsist(int workSpaceId)
+        private readonly IGenericRepository<Workspace> repo = unitOfWork.Repository<Workspace>();
+        public async Task<Workspace?> GetWorkSpaceById(int workSpaceId)
         {
-
-            var workSpace = await repo.GetByIdAsync(workSpaceId);
-            if (workSpace == null)
-                return false;
-            return true;
-
+            var workspace = await repo.GetByIdAsync(workSpaceId);
+            return workspace;
         }
     }
 }
