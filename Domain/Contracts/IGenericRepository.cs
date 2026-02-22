@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Microsoft.EntityFrameworkCore.Query;
+using System.Linq.Expressions;
 
 namespace Domain.Contracts;
 
@@ -15,6 +16,7 @@ public interface IGenericRepository<T> where T : class
     Task<IEnumerable<T>> FindAll(ISpecification<T> specification);
 
     Task<int> CountAsync(ISpecification<T> specification);
+    Task BulkUpdateAsync(ISpecification<T> specification, Expression<Func<SetPropertyCalls<T>, SetPropertyCalls<T>>> updateAction, CancellationToken cancellationToken = default);
     Task BulkDeleteAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default);
 
 }
