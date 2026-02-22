@@ -2,6 +2,7 @@
 using Infrastructure.context;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using System.Linq.Expressions;
 
 namespace Infrastructure.Repository
@@ -49,6 +50,12 @@ namespace Infrastructure.Repository
         public async Task BulkDeleteAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
         {
             await _dbSet.Where(predicate).ExecuteDeleteAsync(cancellationToken);
+        }
+
+        public async Task BulkUpdateAsync(ISpecification<T> specification, Expression<Func<SetPropertyCalls<T>, SetPropertyCalls<T>>> updateAction, CancellationToken cancellationToken = default)
+        {
+            var query = SpecificationEvaluator.CreateQuery(context.Set<T>(), specification);
+            await query.ExecuteUpdateAsync(updateAction, cancellationToken);
         }
     }
 }
