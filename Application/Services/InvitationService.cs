@@ -176,6 +176,11 @@ public class InvitationService(IUnitOfWork unitOfWork,
         var pagedResponse = new PagedResponse<InvitationDto>(invitationsDtos, queryFilter.PageNumber, queryFilter.PageSize, totalRecords);
         return Result<PagedResponse<InvitationDto>>.Success(pagedResponse);
     }
+    public async Task PeriodicUpdateOfExpiredInvitationsAsync()
+    {
+        var specification = new InActiveInvitationSpecification();
+        await invitationRepo.BulkUpdateAsync(specification, inv => inv.SetProperty(x => x.Status, InvitationStatusEnum.Expired));
+    }
     private async Task<Invitation?> GetInvitationByToken(string token)
     {
         var specification = new InvitationByTokenSpecification(token);
