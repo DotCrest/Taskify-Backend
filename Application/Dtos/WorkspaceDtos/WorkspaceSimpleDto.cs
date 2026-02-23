@@ -7,6 +7,6 @@
         public string? Avatar { get; set; }
         public DateTime CreatedAt { get; set; }
         public string OwnerName { get; set; } = null!;
-        public int MembersCount { get; set; }
+        public int MembersCount { get; set; } 
     }
 }
