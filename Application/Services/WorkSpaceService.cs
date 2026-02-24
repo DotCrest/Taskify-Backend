@@ -14,13 +14,15 @@ namespace Application.Services
     {
         private readonly IGenericRepository<Workspace> repo = unitOfWork.Repository<Workspace>();
 
-        public async Task<Result<PagedResponse<WorkspaceSimpleDto>>> GetAllWorkspacesAsync(QueryFilter queryFilter)
+        public async Task<Result<PagedResponse<WorkspaceSimpleDto>>> GetAllWorkspacesAsync(QueryFilter queryFilter, string userId)
         {
-            var specification = new WorkspaceGetAllSpecification(queryFilter);
+            var workspaceCountSpec = new WorkspaceCountSpecification(userId);
+            var specification = new WorkspaceGetAllSpecification(queryFilter, userId);
             var repo = unitOfWork.Repository<Workspace>();
+            var totalRecords = await repo.CountAsync(workspaceCountSpec);
             var workspaces = await repo.FindAll(specification);
             var result = mapper.Map<IReadOnlyList<WorkspaceSimpleDto>>(workspaces);
-            var totalRecords = await repo.CountAsync(specification);
+
             var pagedResponse = new PagedResponse<WorkspaceSimpleDto>(result, queryFilter.PageNumber, queryFilter.PageSize, totalRecords);
             return Result<PagedResponse<WorkspaceSimpleDto>>.Success(pagedResponse);
 

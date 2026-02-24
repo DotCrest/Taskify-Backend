@@ -8,6 +8,6 @@ namespace Application.ServiceAbstractions
     public interface IWorkSpaceService
     {
         Task<Workspace?> GetWorkSpaceById(int workSpaceId);
-        Task<Result<PagedResponse<WorkspaceSimpleDto>>> GetAllWorkspacesAsync(QueryFilter queryFilter);
+        Task<Result<PagedResponse<WorkspaceSimpleDto>>> GetAllWorkspacesAsync(QueryFilter queryFilter, string userId);
     }
 }
