@@ -2,6 +2,7 @@
 using Application.Dtos;
 using Application.Dtos.InvitationDtos;
 using Application.ServiceAbstractions;
+using Application.Shared.Pagination;
 using Domain.Constants;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,9 @@ namespace WebApi.Controllers;
 [Route("api/[controller]")]
 
 public class InvitationController(IInvitationService invitationService,
-                                  IValidator<SendInvitationDto> sendInvitationValidator) : BaseApiController
+                                  IValidator<SendInvitationDto> sendInvitationValidator,
+                                  IValidator<GetInvitationDto> getInvitationValidator,
+                                  IValidator<QueryFilter> queryFilterValidator) : BaseApiController
 {
     [Authorize(Roles = Role.Admin)]
     [HttpPost("send-invitation")]
@@ -59,4 +62,27 @@ public class InvitationController(IInvitationService invitationService,
             onFailure: err => HandleFailure(err)
         );
     }
+    [HttpGet("by-status")]
+    [Authorize(Roles = Role.Admin)]
+    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PagedResponse<InvitationDto>>> GetInvitationByStatus([FromQuery] GetInvitationDto getInvitationDto, [FromQuery] QueryFilter queryFilter)
+    {
+        // validation
+        var queryFilterValidation = await ExecuteWithValidation(queryFilterValidator, queryFilter);
+        if (!queryFilterValidation.IsSuccess)
+            return HandleFailure(queryFilterValidation.ErrorsList);
+        var getInvitationValidation = await ExecuteWithValidation(getInvitationValidator, getInvitationDto);
+        if (!getInvitationValidation.IsSuccess)
+            return HandleFailure(getInvitationValidation.ErrorsList);
+        // business logic
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var result = await invitationService.GetInvitationByStatusAsync(getInvitationDto, queryFilter, userId!);
+        return result.Map<ActionResult<PagedResponse<InvitationDto>>>(
+            onSuccess: res => Ok(res),
+            onFailure: err => HandleFailure(err)
+        );
+    }
+
 }

@@ -1,4 +1,5 @@
-﻿using Application.ServiceAbstractions;
+﻿using Application.MappingProfiles;
+using Application.ServiceAbstractions;
 using Application.Services;
 using Application.Validators.AuthenticationValidators;
 using Domain.Contracts;
@@ -36,6 +37,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString"));
 });
+builder.Services.AddAutoMapper(cfg => { }, typeof(InvitationProfile).Assembly);
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ICodeVerificationService, CodeVerificationService>();
