@@ -1,6 +1,7 @@
 ﻿using Application.Dtos.WorkspaceDtos;
 using Application.ServiceAbstractions;
 using Application.Shared;
+using Application.Shared.Errors;
 using Application.Shared.Pagination;
 using Application.Specifications.WorkspaceSpecifications;
 using AutoMapper;
@@ -32,6 +33,25 @@ namespace Application.Services
         {
             var workspace = await repo.GetByIdAsync(workSpaceId);
             return workspace;
+        }
+
+        public async Task<Result<WorkspaceDetailsDto>> GetWorkSpaceByIdAsync(int workSpaceId, string userId)
+        {
+            var repo = unitOfWork.Repository<Workspace>();
+            var specification = new WorkspaceGetByIdSpecification(workSpaceId);
+            var workspace = await repo.Find(specification);
+            if (workspace == null)
+            {
+                return Result<WorkspaceDetailsDto>.Failure(WorkspaceErrors.NotFound);
+            }
+            var isOwner = workspace.OwnerId == userId;
+            var isMember = workspace.WorkspaceMembers.Any(m => m.UserId == userId);
+            if (!isOwner && !isMember)
+            {
+                return Result<WorkspaceDetailsDto>.Failure(WorkspaceErrors.AccessDenied);
+            }
+            var result = mapper.Map<WorkspaceDetailsDto>(workspace);
+            return Result<WorkspaceDetailsDto>.Success(result);
         }
     }
 }
