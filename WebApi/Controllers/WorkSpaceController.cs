@@ -1,4 +1,5 @@
-﻿using Application.Dtos.WorkspaceDtos;
+﻿using Application.Common.Errors;
+using Application.Dtos.WorkspaceDtos;
 using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Pagination;
@@ -28,6 +29,23 @@ namespace WebApi.Controllers
                 onSuccess: res => Ok(res),
                 onFailure: err => HandleFailure(err));
 
+        }
+        [HttpGet("{id}")]
+        [Authorize]
+        [ProducesResponseType(typeof(WorkspaceDetailsDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+
+        public async Task<ActionResult<Result<WorkspaceDetailsDto>>> GetWorkSpaceById(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            var result = await workSpaceService.GetWorkSpaceByIdAsync(id, userId);
+            return result.Map(
+                onSuccess: res => Ok(res),
+                onFailure: err => HandleFailure(err));
         }
     }
 }
