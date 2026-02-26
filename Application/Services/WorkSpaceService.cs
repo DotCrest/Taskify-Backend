@@ -12,7 +12,7 @@ using Domain.Models;
 namespace Application.Services
 {
     public class WorkSpaceService(IUnitOfWork unitOfWork,
-        IMapper mapper) : IWorkSpaceService
+        IMapper mapper, IWorkSpaceMemberService workSpaceMemberService) : IWorkSpaceService
     {
         private readonly IGenericRepository<Workspace> repo = unitOfWork.Repository<Workspace>();
 
@@ -78,11 +78,17 @@ namespace Application.Services
                         JoinedAt = DateTime.UtcNow,
                         Role = Role.Admin,
                     };
-                    await unitOfWork.Repository<WorkspaceMember>().AddAsync(member);
+                    await workSpaceMemberService.AddWorkSpaceMemberAsync(member);
                     await unitOfWork.SaveAsync();
+
                 });
-                var wokspaceDto = mapper.Map<WorkspaceSimpleDto>(workspace);
-                return Result<WorkspaceSimpleDto>.Success(wokspaceDto);
+                if (workspace != null)
+                {
+                    var wokspaceDto = mapper.Map<WorkspaceSimpleDto>(workspace);
+                    return Result<WorkspaceSimpleDto>.Success(wokspaceDto);
+                }
+                return Result<WorkspaceSimpleDto>.Failure(WorkspaceErrors.CreatedFailed);
+
             }
             catch (Exception ex)
             {
