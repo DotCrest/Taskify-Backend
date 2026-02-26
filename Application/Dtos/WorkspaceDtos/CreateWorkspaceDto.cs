@@ -1,8 +1,7 @@
-﻿namespace Application.Dtos.WorkspaceDtos
+﻿namespace Application.Dtos.WorkspaceDtos;
+
+public class CreateWorkspaceDto
 {
-    public class CreateWorkspaceDto
-    {
-        public string Name { get; set; } = null!;
-        public string? Avatar { get; set; }
-    }
+    public string Name { get; set; } = null!;
+    public string? Avatar { get; set; }
 }
