@@ -14,7 +14,7 @@ namespace WebApi.Controllers
     [ApiController]
     [Route("api/[controller]")]
     public class WorkSpaceController(IWorkSpaceService workSpaceService,
-        IValidator<QueryFilter> queryFilterValidator) : BaseApiController
+        IValidator<QueryFilter> queryFilterValidator, IValidator<CreateWorkspaceDto> createWorkspaceValidator) : BaseApiController
     {
         [HttpGet("get-all")]
         [Authorize(Roles = Role.Admin)]
@@ -45,7 +45,28 @@ namespace WebApi.Controllers
             var result = await workSpaceService.GetWorkSpaceByIdAsync(id, userId);
             return result.Map(
                 onSuccess: res => Ok(res),
-                onFailure: err => HandleFailure(err));
+                onFailure: err => HandleFailure(err)
+            );
+        }
+        [HttpPost("create-workspace")]
+        [Authorize(Roles = Role.Admin)]
+        [ProducesResponseType(typeof(WorkspaceSimpleDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<Result<WorkspaceSimpleDto>>> CreateWorkspace([FromBody] CreateWorkspaceDto dto)
+        {
+            var dtoValidator = await ExecuteWithValidation(createWorkspaceValidator, dto);
+            if (!dtoValidator.IsSuccess)
+                return HandleFailure(dtoValidator.ErrorsList);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            var result = await workSpaceService.CreateWorkspaceAsync(dto, userId);
+            return result.Map(
+                onSuccess: res => CreatedAtAction(actionName: nameof(GetWorkSpaceById)
+                , routeValues: new { id = res.Id }
+                , value: res),
+                onFailure: err => HandleFailure(err)
+            );
         }
     }
 }
