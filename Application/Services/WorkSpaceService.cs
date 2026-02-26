@@ -69,8 +69,10 @@ namespace Application.Services
                         CreatedAt = DateTime.UtcNow,
                         OwnerId = userId,
                     };
+
                     await repo.AddAsync(workspace);
                     await unitOfWork.SaveAsync();
+
                     var member = new WorkspaceMember()
                     {
                         WorkspaceId = workspace.Id,
@@ -78,20 +80,28 @@ namespace Application.Services
                         JoinedAt = DateTime.UtcNow,
                         Role = Role.Admin,
                     };
+
                     await workSpaceMemberService.AddWorkSpaceMemberAsync(member);
                     await unitOfWork.SaveAsync();
-
                 });
-                if (workspace != null)
-                {
-                    var wokspaceDto = mapper.Map<WorkspaceSimpleDto>(workspace);
-                    return Result<WorkspaceSimpleDto>.Success(wokspaceDto);
-                }
-                return Result<WorkspaceSimpleDto>.Failure(WorkspaceErrors.CreatedFailed);
 
+
+                var spec = new WorkspaceGetByIdSpecification(workspace!.Id);
+                var fullWorkspace = await repo.Find(spec);
+
+                if (fullWorkspace == null)
+                {
+                    return Result<WorkspaceSimpleDto>.Failure(WorkspaceErrors.CreatedFailed);
+                }
+
+
+                var workspaceDto = mapper.Map<WorkspaceSimpleDto>(fullWorkspace);
+
+                return Result<WorkspaceSimpleDto>.Success(workspaceDto);
             }
             catch (Exception ex)
             {
+
                 return Result<WorkspaceSimpleDto>.Failure(WorkspaceErrors.CreatedFailed);
             }
         }
