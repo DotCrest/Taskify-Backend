@@ -5,6 +5,7 @@ using Application.Shared.Errors;
 using Application.Shared.Pagination;
 using Application.Specifications.WorkspaceSpecifications;
 using AutoMapper;
+using Domain.Constants;
 using Domain.Contracts;
 using Domain.Models;
 
@@ -14,6 +15,7 @@ namespace Application.Services
         IMapper mapper) : IWorkSpaceService
     {
         private readonly IGenericRepository<Workspace> repo = unitOfWork.Repository<Workspace>();
+
 
         public async Task<Result<PagedResponse<WorkspaceSimpleDto>>> GetAllWorkspacesAsync(QueryFilter queryFilter, string userId)
         {
@@ -52,6 +54,40 @@ namespace Application.Services
             }
             var result = mapper.Map<WorkspaceDetailsDto>(workspace);
             return Result<WorkspaceDetailsDto>.Success(result);
+        }
+        public async Task<Result<WorkspaceSimpleDto>> CreateWorkspaceAsync(CreateWorkspaceDto createWorkspaceDto, string userId)
+        {
+            Workspace? workspace = null;
+            try
+            {
+                await unitOfWork.ExecuteInTransactionAsync(async () =>
+                {
+                    workspace = new Workspace()
+                    {
+                        Name = createWorkspaceDto.Name,
+                        Avatar = createWorkspaceDto.Avatar,
+                        CreatedAt = DateTime.UtcNow,
+                        OwnerId = userId,
+                    };
+                    await repo.AddAsync(workspace);
+                    await unitOfWork.SaveAsync();
+                    var member = new WorkspaceMember()
+                    {
+                        WorkspaceId = workspace.Id,
+                        UserId = userId,
+                        JoinedAt = DateTime.UtcNow,
+                        Role = Role.Admin,
+                    };
+                    await unitOfWork.Repository<WorkspaceMember>().AddAsync(member);
+                    await unitOfWork.SaveAsync();
+                });
+                var wokspaceDto = mapper.Map<WorkspaceSimpleDto>(workspace);
+                return Result<WorkspaceSimpleDto>.Success(wokspaceDto);
+            }
+            catch (Exception ex)
+            {
+                return Result<WorkspaceSimpleDto>.Failure(WorkspaceErrors.CreatedFailed);
+            }
         }
     }
 }
