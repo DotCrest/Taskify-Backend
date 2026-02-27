@@ -105,5 +105,20 @@ namespace Application.Services
                 return Result<WorkspaceSimpleDto>.Failure(WorkspaceErrors.CreatedFailed);
             }
         }
+
+        public async Task<Result<bool>> UpdateWorkSpaceAsync(int workspaceId, UpdateWorkspaceDto updateWorkspaceDto, string userId)
+        {
+            var workspace =await GetWorkSpaceById(workspaceId);
+            if(workspace is null)
+                return Result<bool>.Failure(WorkspaceErrors.NotFound);
+            if(workspace.OwnerId != userId)
+                return Result<bool>.Failure(WorkspaceErrors.AccessDenied);
+            workspace.Name = updateWorkspaceDto.Name;
+            workspace.Avatar = updateWorkspaceDto.Avatar;
+            var result= await unitOfWork.SaveAsync()>0;
+            return result ? Result<bool>.Success(true) : Result<bool>.Failure(WorkspaceErrors.UpdateFailed);
+
+
+        }
     }
 }
