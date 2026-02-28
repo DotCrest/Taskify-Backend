@@ -7,6 +7,7 @@ using Domain.Models;
 using Domain.Options;
 using Domain.Settings;
 using FluentValidation;
+using Hangfire;
 using Infrastructure;
 using Infrastructure.context;
 using Infrastructure.Repository;
@@ -37,6 +38,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString"));
 });
+builder.Services.AddHangfire(config =>
+{
+    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnectionString"));
+});
+builder.Services.AddHangfireServer();
 builder.Services.AddAutoMapper(cfg => { }, typeof(InvitationProfile).Assembly);
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -138,5 +144,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.UseHangfireDashboard("/hangfire");
+RecurringJob.AddOrUpdate<IInvitationService>("expired-invitations-job", service => service.PeriodicUpdateOfExpiredInvitationsAsync(), Cron.Daily());
 app.Run();
