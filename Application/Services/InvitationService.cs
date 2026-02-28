@@ -10,6 +10,7 @@ using Domain.Contracts;
 using Domain.Models;
 using Domain.Settings;
 using Microsoft.Extensions.Options;
+using System.Linq.Expressions;
 
 namespace Application.Services;
 
@@ -180,6 +181,15 @@ public class InvitationService(IUnitOfWork unitOfWork,
     {
         var specification = new InActiveInvitationSpecification();
         await invitationRepo.BulkUpdateAsync(specification, inv => inv.SetProperty(x => x.Status, InvitationStatusEnum.Expired));
+    }
+    public async Task<Result<bool>> BulkDeleteInvitationsByCriteria(Expression<Func<Invitation, bool>> criteria)
+    {
+        if (criteria is null)
+            return Result<bool>.Failure(InvitationErrors.BulkDeleteFailure);
+        if (criteria.Body is ConstantExpression constant && (bool)constant.Value! == true)
+            return Result<bool>.Failure(InvitationErrors.BulkDeleteFailure);
+        await invitationRepo.BulkDeleteAsync(criteria);
+        return Result<bool>.Success(true);
     }
     private async Task<Invitation?> GetInvitationByToken(string token)
     {
