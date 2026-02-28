@@ -89,5 +89,23 @@ namespace WebApi.Controllers
                 onFailure: err => HandleFailure(err)
             );
         }
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = Role.Admin)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<Result<bool>>> DeleteWorkSpace(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            var result = await workSpaceService.DeleteWorkSpaceAsync(id, userId);
+            return result.Map(
+                onSuccess: res => NoContent(),
+                onFailure: err => HandleFailure(err)
+            );
+        }
     }
 }
