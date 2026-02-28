@@ -46,6 +46,7 @@ builder.Services.AddScoped<IWorkSpaceMemberService, WorkSpaceMemberService>();
 builder.Services.AddScoped<PasswordHasher<User>>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IWorkSpaceService, WorkSpaceService>();
+builder.Services.AddScoped<IQuestService, QuestService>();
 builder.Services.AddScoped<IInvitationService, InvitationService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.Configure<UrlOptions>(builder.Configuration.GetSection("Urls"));
