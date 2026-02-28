@@ -14,7 +14,8 @@ namespace WebApi.Controllers
     [ApiController]
     [Route("api/[controller]")]
     public class WorkSpaceController(IWorkSpaceService workSpaceService,
-        IValidator<QueryFilter> queryFilterValidator, IValidator<CreateWorkspaceDto> createWorkspaceValidator) : BaseApiController
+        IValidator<QueryFilter> queryFilterValidator, IValidator<CreateWorkspaceDto> createWorkspaceValidator
+        , IValidator<UpdateWorkspaceDto> updateWorkspaceValidator) : BaseApiController
     {
         [HttpGet("get-all")]
         [Authorize(Roles = Role.Admin)]
@@ -65,6 +66,26 @@ namespace WebApi.Controllers
                 onSuccess: res => CreatedAtAction(actionName: nameof(GetWorkSpaceById)
                 , routeValues: new { id = res.Id }
                 , value: res),
+                onFailure: err => HandleFailure(err)
+            );
+        }
+        [HttpPut("{id}")]
+        [Authorize(Roles = Role.Admin)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<Result<bool>>> UpdateWorkSpace(int id, [FromBody] UpdateWorkspaceDto dto)
+        {
+            var dtoValidator = await ExecuteWithValidation(updateWorkspaceValidator, dto);
+            if (!dtoValidator.IsSuccess)
+                return HandleFailure(dtoValidator.ErrorsList);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            var result = await workSpaceService.UpdateWorkSpaceAsync(id, dto, userId);
+            return result.Map(
+                onSuccess: res => NoContent(),
                 onFailure: err => HandleFailure(err)
             );
         }
