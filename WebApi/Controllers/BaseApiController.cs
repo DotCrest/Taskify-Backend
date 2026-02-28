@@ -27,6 +27,7 @@ public abstract class BaseApiController : ControllerBase
             _ when errorCode.Contains("NotFound") => NotFound(errors),
             _ when errorCode.Contains("AlreadyExist") => Conflict(errors),
             _ when errorCode.Contains("LockedOut") => StatusCode(StatusCodes.Status423Locked, errors),
+            _ when errorCode.Contains("AccessDenied") => StatusCode(StatusCodes.Status403Forbidden, errors),
             _ when errorCode.Contains("InvalidCredentials") || errorCode.Contains("InvalidRefreshToken") ||
             errorCode.Contains("Unauthorized")
                 => Unauthorized(errors),
