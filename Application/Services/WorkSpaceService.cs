@@ -12,7 +12,8 @@ using Domain.Models;
 namespace Application.Services
 {
     public class WorkSpaceService(IUnitOfWork unitOfWork,
-        IMapper mapper, IWorkSpaceMemberService workSpaceMemberService) : IWorkSpaceService
+        IMapper mapper, IWorkSpaceMemberService workSpaceMemberService
+        , ITagService tagService, IQuestService questService, IInvitationService invitationService) : IWorkSpaceService
     {
         private readonly IGenericRepository<Workspace> repo = unitOfWork.Repository<Workspace>();
 
@@ -120,5 +121,28 @@ namespace Application.Services
 
 
         }
+        public async Task<Result<bool>> DeleteWorkSpaceAsync(int workspaceId, string userId)
+        {
+            var workspace = await repo.GetByIdAsync(workspaceId);
+            if (workspace is null)
+                return Result<bool>.Failure(WorkspaceErrors.NotFound);
+            if (workspace.OwnerId != userId)
+                return Result<bool>.Failure(WorkspaceErrors.AccessDenied);
+            try
+            {
+                await unitOfWork.ExecuteInTransactionAsync(async () =>
+                {
+                    await questService.DetachQuestFromWorkspace(workspaceId);
+                    await tagService.DeleteAllTagsRelatedToWorkspace(workspaceId);
+                    await invitationService.BulkDeleteInvitationsByCriteria(w => w.WorkspaceId == workspaceId);
+                    repo.Delete(workspace);
+                });
+                return Result<bool>.Success(true);
+
+            }
+            catch (Exception ex)
+            {
+                return Result<bool>.Failure(WorkspaceErrors.DeleteFailed);
+            }
+        }
     }
-}
