@@ -136,6 +136,7 @@ namespace Application.Services
                     await tagService.DeleteAllTagsRelatedToWorkspace(workspaceId);
                     await invitationService.BulkDeleteInvitationsByCriteria(w => w.WorkspaceId == workspaceId);
                     repo.Delete(workspace);
+                    await unitOfWork.SaveAsync();
                 });
                 return Result<bool>.Success(true);
 
