@@ -20,7 +20,7 @@ public class InvitationController(IInvitationService invitationService,
                                   IValidator<QueryFilter> queryFilterValidator) : BaseApiController
 {
     [Authorize(Roles = Role.Admin)]
-    [HttpPost("send-invitation")]
+    [HttpPost("send")]
     [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
@@ -38,7 +38,7 @@ public class InvitationController(IInvitationService invitationService,
             onFailure: err => HandleFailure(err)
         );
     }
-    [HttpGet("validate-invitation")]
+    [HttpGet("validate")]
     [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
@@ -50,7 +50,7 @@ public class InvitationController(IInvitationService invitationService,
             onFailure: err => HandleFailure(err)
         );
     }
-    [HttpPost("accept-invitation")]
+    [HttpPost("accept")]
     [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
