@@ -2,5 +2,5 @@
 
 public interface IQuestService
 {
-    Task DetachQuestFromWorkspace(int workspaceId, CancellationToken cancellationToken);
+    Task DetachQuestFromWorkspace(int workspaceId, CancellationToken cancellationToken = default);
 }
