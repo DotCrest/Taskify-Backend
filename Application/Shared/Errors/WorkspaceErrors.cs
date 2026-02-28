@@ -12,4 +12,6 @@ public static class WorkspaceErrors
         new Error("Workspace.CreatedFailed", "An error occurred while creating the workspace");
     public static readonly Error UpdateFailed =
         new Error("Workspace.UpdateFailed", "An error occurred while updating the workspace");
+    public static readonly Error DeleteFailed =
+        new Error("Workspace.DeleteFailed", "An error occurred while deleting the workspace");
 }
