@@ -17,12 +17,12 @@ namespace Application.Services;
 public class InvitationService(IUnitOfWork unitOfWork,
                            IAccountService accountService,
                            IEmailService emailService,
-                           IWorkSpaceService workSpaceService,
                            IWorkSpaceMemberService workSpaceMemberService,
                            IOptions<UrlOptions> urlOptions,
                            IMapper mapper) : IInvitationService
 {
     private readonly UrlOptions urlOptions = urlOptions.Value;
+    private readonly IGenericRepository<Workspace> workspaceRepo = unitOfWork.Repository<Workspace>();
     private readonly IGenericRepository<Invitation> invitationRepo = unitOfWork.Repository<Invitation>();
     public async Task<Result<BaseToReturnDto>> SendInvitationAsync(SendInvitationDto sendInvitationDto, string senderId)
     {
@@ -31,7 +31,7 @@ public class InvitationService(IUnitOfWork unitOfWork,
         if (sender is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
         // check if the workspace exists
-        var workspace = await workSpaceService.GetWorkSpaceById(sendInvitationDto.WorkspaceId);
+        var workspace = await workspaceRepo.GetByIdAsync(sendInvitationDto.WorkspaceId);
         if (workspace is null)
             return Result<BaseToReturnDto>.Failure(WorkspaceErrors.NotFound);
         // if the sender has already sent an invitation to the same email and it's still pending
@@ -107,7 +107,7 @@ public class InvitationService(IUnitOfWork unitOfWork,
         if (user is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
         // check if workspace exists
-        var workspace = await workSpaceService.GetWorkSpaceById(invitation.WorkspaceId);
+        var workspace = await workspaceRepo.GetByIdAsync(invitation.WorkspaceId);
         if (workspace is null)
             return Result<BaseToReturnDto>.Failure(WorkspaceErrors.NotFound);
         // add the user to the workspace members
@@ -151,7 +151,7 @@ public class InvitationService(IUnitOfWork unitOfWork,
     }
     public async Task<Result<PagedResponse<InvitationDto>>> GetInvitationByStatusAsync(GetInvitationDto getInvitationDto, QueryFilter queryFilter, string userId)
     {
-        var workspace = await workSpaceService.GetWorkSpaceById(getInvitationDto.WorkspaceId);
+        var workspace = await workspaceRepo.GetByIdAsync(getInvitationDto.WorkspaceId);
         if (workspace is null)
             return Result<PagedResponse<InvitationDto>>.Failure(WorkspaceErrors.NotFound);
         if (workspace.OwnerId != userId)
