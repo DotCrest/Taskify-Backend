@@ -9,6 +9,7 @@ using AutoMapper;
 using Domain.Contracts;
 using Domain.Models;
 using Domain.Settings;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Linq.Expressions;
 
@@ -19,7 +20,8 @@ public class InvitationService(IUnitOfWork unitOfWork,
                            IEmailService emailService,
                            IWorkSpaceMemberService workSpaceMemberService,
                            IOptions<UrlOptions> urlOptions,
-                           IMapper mapper) : IInvitationService
+                           IMapper mapper,
+                           ILogger<InvitationService> logger) : IInvitationService
 {
     private readonly UrlOptions urlOptions = urlOptions.Value;
     private readonly IGenericRepository<Workspace> workspaceRepo = unitOfWork.Repository<Workspace>();
@@ -182,14 +184,19 @@ public class InvitationService(IUnitOfWork unitOfWork,
         var specification = new InActiveInvitationSpecification();
         await invitationRepo.BulkUpdateAsync(specification, inv => inv.SetProperty(x => x.Status, InvitationStatusEnum.Expired));
     }
-    public async Task<Result<bool>> BulkDeleteInvitationsByCriteria(Expression<Func<Invitation, bool>> criteria)
+    public async Task BulkDeleteInvitationsByCriteria(Expression<Func<Invitation, bool>> criteria)
     {
         if (criteria is null)
-            return Result<bool>.Failure(InvitationErrors.BulkDeleteFailure);
+        {
+            logger.LogError("BulkDeleteInvitationsByCriteria: criteria is null");
+            throw new ArgumentNullException(nameof(criteria));
+        }
         if (criteria.Body is ConstantExpression constant && (bool)constant.Value! == true)
-            return Result<bool>.Failure(InvitationErrors.BulkDeleteFailure);
+        {
+            logger.LogError("BulkDeleteInvitationsByCriteria: criteria is too broad and may lead to deleting all invitations");
+            throw new Exception();
+        }
         await invitationRepo.BulkDeleteAsync(criteria);
-        return Result<bool>.Success(true);
     }
     private async Task<Invitation?> GetInvitationByToken(string token)
     {
