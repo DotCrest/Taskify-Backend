@@ -26,6 +26,16 @@ public class InvitationService(IUnitOfWork unitOfWork,
     private readonly UrlOptions urlOptions = urlOptions.Value;
     private readonly IGenericRepository<Workspace> workspaceRepo = unitOfWork.Repository<Workspace>();
     private readonly IGenericRepository<Invitation> invitationRepo = unitOfWork.Repository<Invitation>();
+    public async Task<Result<PagedResponse<InvitationDto>>> GetAllInvitationsAsync(QueryFilter queryFilter, int workspaceId)
+    {
+        var specification = new InvitationByWorkspaceSpecification(queryFilter, workspaceId);
+        var countSpecification = new InvitationByWorkspaceCountSpecification(workspaceId);
+        var invitations = await invitationRepo.FindAll(specification);
+        var invitationsCount = await invitationRepo.CountAsync(countSpecification);
+        var invitationDtos = mapper.Map<IEnumerable<InvitationDto>>(invitations);
+        var pagedResponse = new PagedResponse<InvitationDto>(invitationDtos, queryFilter.PageNumber, queryFilter.PageSize, invitationsCount);
+        return Result<PagedResponse<InvitationDto>>.Success(pagedResponse);
+    }
     public async Task<Result<BaseToReturnDto>> SendInvitationAsync(SendInvitationDto sendInvitationDto, string senderId)
     {
         // check if the sender exists
@@ -222,5 +232,6 @@ public class InvitationService(IUnitOfWork unitOfWork,
         await unitOfWork.SaveAsync();
         return invitation;
     }
+
 
 }
