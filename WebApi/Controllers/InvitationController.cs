@@ -20,6 +20,16 @@ public class InvitationController(IInvitationService invitationService,
                                   IValidator<QueryFilter> queryFilterValidator) : BaseApiController
 {
     [Authorize(Roles = Role.Admin)]
+    [ProducesResponseType(typeof(PagedResponse<InvitationDto>), StatusCodes.Status200OK)]
+    [HttpGet("all")]
+    public async Task<ActionResult<PagedResponse<InvitationDto>>> GetAllInvitations([FromQuery] QueryFilter queryFilter, [FromQuery] int workspaceId)
+    {
+        var result = await invitationService.GetAllInvitationsAsync(queryFilter, workspaceId);
+        return result.Map<ActionResult<PagedResponse<InvitationDto>>>(
+        onSuccess: res => Ok(res),
+        onFailure: err => HandleFailure(err));
+    }
+    [Authorize(Roles = Role.Admin)]
     [HttpPost("send")]
     [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
