@@ -9,6 +9,7 @@ using AutoMapper;
 using Domain.Contracts;
 using Domain.Models;
 using Domain.Settings;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Linq.Expressions;
 
@@ -19,11 +20,22 @@ public class InvitationService(IUnitOfWork unitOfWork,
                            IEmailService emailService,
                            IWorkSpaceMemberService workSpaceMemberService,
                            IOptions<UrlOptions> urlOptions,
-                           IMapper mapper) : IInvitationService
+                           IMapper mapper,
+                           ILogger<InvitationService> logger) : IInvitationService
 {
     private readonly UrlOptions urlOptions = urlOptions.Value;
     private readonly IGenericRepository<Workspace> workspaceRepo = unitOfWork.Repository<Workspace>();
     private readonly IGenericRepository<Invitation> invitationRepo = unitOfWork.Repository<Invitation>();
+    public async Task<Result<PagedResponse<InvitationDto>>> GetAllInvitationsAsync(QueryFilter queryFilter, int workspaceId)
+    {
+        var specification = new InvitationByWorkspaceSpecification(queryFilter, workspaceId);
+        var countSpecification = new InvitationByWorkspaceCountSpecification(workspaceId);
+        var invitations = await invitationRepo.FindAll(specification);
+        var invitationsCount = await invitationRepo.CountAsync(countSpecification);
+        var invitationDtos = mapper.Map<IEnumerable<InvitationDto>>(invitations);
+        var pagedResponse = new PagedResponse<InvitationDto>(invitationDtos, queryFilter.PageNumber, queryFilter.PageSize, invitationsCount);
+        return Result<PagedResponse<InvitationDto>>.Success(pagedResponse);
+    }
     public async Task<Result<BaseToReturnDto>> SendInvitationAsync(SendInvitationDto sendInvitationDto, string senderId)
     {
         // check if the sender exists
@@ -182,13 +194,27 @@ public class InvitationService(IUnitOfWork unitOfWork,
         var specification = new InActiveInvitationSpecification();
         await invitationRepo.BulkUpdateAsync(specification, inv => inv.SetProperty(x => x.Status, InvitationStatusEnum.Expired));
     }
-    public async Task<Result<bool>> BulkDeleteInvitationsByCriteria(Expression<Func<Invitation, bool>> criteria)
+    public async Task BulkDeleteInvitationsByCriteria(Expression<Func<Invitation, bool>> criteria)
     {
         if (criteria is null)
-            return Result<bool>.Failure(InvitationErrors.BulkDeleteFailure);
+        {
+            logger.LogError("BulkDeleteInvitationsByCriteria: criteria is null");
+            throw new ArgumentNullException(nameof(criteria));
+        }
         if (criteria.Body is ConstantExpression constant && (bool)constant.Value! == true)
-            return Result<bool>.Failure(InvitationErrors.BulkDeleteFailure);
+        {
+            logger.LogError("BulkDeleteInvitationsByCriteria: criteria is too broad and may lead to deleting all invitations");
+            throw new Exception();
+        }
         await invitationRepo.BulkDeleteAsync(criteria);
+    }
+    public async Task<Result<bool>> DeleteInvitationById(int invitationId)
+    {
+        var invitation = await invitationRepo.GetByIdAsync(invitationId);
+        if (invitation is null)
+            return Result<bool>.Failure(InvitationErrors.NotFound);
+        invitationRepo.Delete(invitation);
+        await unitOfWork.SaveAsync();
         return Result<bool>.Success(true);
     }
     private async Task<Invitation?> GetInvitationByToken(string token)
@@ -215,5 +241,6 @@ public class InvitationService(IUnitOfWork unitOfWork,
         await unitOfWork.SaveAsync();
         return invitation;
     }
+
 
 }

@@ -9,6 +9,7 @@ namespace Application.ServiceAbstractions;
 
 public interface IInvitationService
 {
+    Task<Result<PagedResponse<InvitationDto>>> GetAllInvitationsAsync(QueryFilter queryFilter, int workspaceId);
     Task<Result<BaseToReturnDto>> SendInvitationAsync(SendInvitationDto sendInvitationDto, string senderId);
     Task<Result<InviteValidationDto>> ValidateInvitationAsync(string token);
     Task<Result<BaseToReturnDto>> AcceptInvitationAsync(string token);
@@ -16,5 +17,6 @@ public interface IInvitationService
     Task<Result<PagedResponse<InvitationDto>>> GetInvitationByStatusAsync(GetInvitationDto getInvitationDto, QueryFilter queryFilter, string userId);
     Task PeriodicUpdateOfExpiredInvitationsAsync();
     void UpdateInvitationStatus(Invitation invitation, InvitationStatusEnum status);
-    Task<Result<bool>> BulkDeleteInvitationsByCriteria(Expression<Func<Invitation, bool>> criteria);
+    Task BulkDeleteInvitationsByCriteria(Expression<Func<Invitation, bool>> criteria);
+    Task<Result<bool>> DeleteInvitationById(int invitationId);
 }
