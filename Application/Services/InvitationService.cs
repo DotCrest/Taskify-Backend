@@ -208,6 +208,15 @@ public class InvitationService(IUnitOfWork unitOfWork,
         }
         await invitationRepo.BulkDeleteAsync(criteria);
     }
+    public async Task<Result<bool>> DeleteInvitationById(int invitationId)
+    {
+        var invitation = await invitationRepo.GetByIdAsync(invitationId);
+        if (invitation is null)
+            return Result<bool>.Failure(InvitationErrors.NotFound);
+        invitationRepo.Delete(invitation);
+        await unitOfWork.SaveAsync();
+        return Result<bool>.Success(true);
+    }
     private async Task<Invitation?> GetInvitationByToken(string token)
     {
         var specification = new InvitationByTokenSpecification(token);

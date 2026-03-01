@@ -18,4 +18,5 @@ public interface IInvitationService
     Task PeriodicUpdateOfExpiredInvitationsAsync();
     void UpdateInvitationStatus(Invitation invitation, InvitationStatusEnum status);
     Task BulkDeleteInvitationsByCriteria(Expression<Func<Invitation, bool>> criteria);
+    Task<Result<bool>> DeleteInvitationById(int invitationId);
 }
