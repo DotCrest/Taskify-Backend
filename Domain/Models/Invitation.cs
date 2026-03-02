@@ -8,7 +8,7 @@ public class Invitation
     public string ReceiverRole { get; set; } = default!;
     public string Token { get; set; } = default!;
     public DateTime CreatedAt { get; set; }
-    public bool IsActive => DateTime.Now <= CreatedAt.AddDays(7);
+    public bool IsActive => DateTime.UtcNow <= CreatedAt.AddDays(7);
 
     // Relations: One to Many => relationships with (Space, Workspace, User)
     public string? SenderId { get; set; } = default!;
