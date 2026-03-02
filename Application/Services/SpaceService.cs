@@ -60,7 +60,7 @@ public class SpaceService(IUnitOfWork unitOfWork,
     }
     public async Task<Result<SpaceDto>> GetSpaceByIdAsync(int spaceId, string userId)
     {
-        var space = await spaceRepo.GetByIdAsync(spaceId);
+        var space = await spaceRepo.Find(new SpaceByIdSpecification(spaceId));
         if (space is null)
             return Result<SpaceDto>.Failure(SpaceErrors.NotFound);
         var isMember = await workspaceMemberRepo.Find(new WorkSpaceMemberSpecification(space.WorkspaceId, userId));

@@ -8,4 +8,5 @@ public class SpaceDto
     public string? IconType { get; set; }
     public string? IconValue { get; set; }
     public int WorkspaceId { get; set; }
+    // TODO: create a List of QuestDto to return the space related quests.
 }
