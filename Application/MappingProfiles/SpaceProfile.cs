@@ -8,5 +8,6 @@ public class SpaceProfile : Profile
     public SpaceProfile()
     {
         CreateMap<Space, SimpleSpaceDto>();
+        CreateMap<Space, SpaceDto>();
     }
 }
