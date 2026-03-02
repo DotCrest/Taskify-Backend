@@ -13,5 +13,4 @@ public class Group // this is a List of Quests but, for clean code I named it 'G
     public int SpaceId { get; set; }
     public Space Space { get; set; } = default!;
     // Relations: One to Many => relationships with (Quests)
-    public ICollection<Quest> Quests { get; set; } = [];
 }

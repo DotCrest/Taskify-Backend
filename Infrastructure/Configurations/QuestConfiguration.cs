@@ -14,9 +14,9 @@ public class QuestConfiguration : IEntityTypeConfiguration<Quest>
             .OnDelete(DeleteBehavior.NoAction);
 
         builder
-            .HasOne(q => q.Group)
-            .WithMany(g => g.Quests)
-            .HasForeignKey(q => q.GroupId)
+            .HasOne(q => q.Space)
+            .WithMany(s => s.Quests)
+            .HasForeignKey(q => q.SpaceId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder

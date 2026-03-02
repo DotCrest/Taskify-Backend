@@ -17,8 +17,8 @@ public class Quest
     public int? CategoryId { get; set; }
     public Category? Category { get; set; } = default!;
 
-    public int GroupId { get; set; }
-    public Group Group { get; set; } = default!;
+    public int SpaceId { get; set; }
+    public Space Space { get; set; } = default!;
 
     // (Creator)
     public string? AuthorId { get; set; } = default!;
