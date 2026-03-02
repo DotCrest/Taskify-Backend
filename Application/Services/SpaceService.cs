@@ -58,4 +58,15 @@ public class SpaceService(IUnitOfWork unitOfWork,
         var spacesToReturn = mapper.Map<IEnumerable<SpaceDto>>(spaces);
         return Result<PagedResponse<SpaceDto>>.Success(new PagedResponse<SpaceDto>(spacesToReturn, queryFilter.PageNumber, queryFilter.PageSize, totalRecords));
     }
+    public async Task<Result<SpaceDto>> GetSpaceByIdAsync(int spaceId, string userId)
+    {
+        var space = await spaceRepo.GetByIdAsync(spaceId);
+        if (space is null)
+            return Result<SpaceDto>.Failure(SpaceErrors.NotFound);
+        var isMember = await workspaceMemberRepo.Find(new WorkSpaceMemberSpecification(space.WorkspaceId, userId));
+        if (isMember is null)
+            return Result<SpaceDto>.Failure(SpaceErrors.AccessDenied);
+        var spaceToReturn = mapper.Map<SpaceDto>(space);
+        return Result<SpaceDto>.Success(spaceToReturn);
+    }
 }
