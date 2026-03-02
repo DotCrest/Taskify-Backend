@@ -1,4 +1,4 @@
-using Application.Dtos.AuthenticationDtos;
+﻿using Application.Dtos.AuthenticationDtos;
 using FluentValidation;
 
 namespace Application.Validators.AuthenticationValidators;
