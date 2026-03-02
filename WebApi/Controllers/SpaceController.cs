@@ -45,4 +45,17 @@ public class SpaceController(ISpaceService spaceService,
             onSuccess: res => Ok(res),
             onFailure: err => HandleFailure(err));
     }
+    [HttpGet("{spaceId}")]
+    [Authorize]
+    [ProducesResponseType(typeof(SpaceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<SpaceDto>> GetSpaceById(int spaceId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var result = await spaceService.GetSpaceByIdAsync(spaceId, userId!);
+        return result.Map<ActionResult<SpaceDto>>(
+            onSuccess: res => Ok(res),
+            onFailure: err => HandleFailure(err));
+    }
 }
