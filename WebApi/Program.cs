@@ -55,6 +55,7 @@ builder.Services.AddScoped<IWorkSpaceService, WorkSpaceService>();
 builder.Services.AddScoped<IQuestService, QuestService>();
 builder.Services.AddScoped<IInvitationService, InvitationService>();
 builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddScoped<ISpaceService, SpaceService>();
 builder.Services.Configure<UrlOptions>(builder.Configuration.GetSection("Urls"));
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("email-config"));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
