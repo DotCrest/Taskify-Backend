@@ -12,7 +12,8 @@ namespace WebApi.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public class SpaceController(ISpaceService spaceService,
-                             IValidator<CreateSpaceDto> validator) : BaseApiController
+                             IValidator<CreateSpaceDto> createSpaceValidator,
+                             IValidator<PatchSpaceDto> patchSpaceValidator) : BaseApiController
 {
     [HttpPost("create")]
     [Authorize(Roles = Role.Admin)]
@@ -22,7 +23,7 @@ public class SpaceController(ISpaceService spaceService,
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<SpaceDto>> CreateSpace(CreateSpaceDto createSpaceDto)
     {
-        var validationResult = await ExecuteWithValidation(validator, createSpaceDto);
+        var validationResult = await ExecuteWithValidation(createSpaceValidator, createSpaceDto);
         if (!validationResult.IsSuccess)
             return HandleFailure(validationResult.ErrorsList);
         var result = await spaceService.CreateSpaceAsync(createSpaceDto);
@@ -54,6 +55,23 @@ public class SpaceController(ISpaceService spaceService,
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var result = await spaceService.GetSpaceByIdAsync(spaceId, userId!);
+        return result.Map<ActionResult<SpaceDto>>(
+            onSuccess: res => Ok(res),
+            onFailure: err => HandleFailure(err));
+    }
+    [HttpPatch("edit/{spaceId}")]
+    [Authorize(Roles = Role.Admin)]
+    [ProducesResponseType(typeof(SpaceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<SpaceDto>> EditSpace(int spaceId, PatchSpaceDto patchSpaceDto)
+    {
+        var validationResult = await ExecuteWithValidation(patchSpaceValidator, patchSpaceDto);
+        if (!validationResult.IsSuccess)
+            return HandleFailure(validationResult.ErrorsList);
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var result = await spaceService.UpdateSpaceAsync(spaceId, patchSpaceDto, userId!);
         return result.Map<ActionResult<SpaceDto>>(
             onSuccess: res => Ok(res),
             onFailure: err => HandleFailure(err));
