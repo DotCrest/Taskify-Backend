@@ -40,7 +40,6 @@ public class SpaceService(IUnitOfWork unitOfWork,
         var spaceToReturn = mapper.Map<SpaceDto>(space);
         return Result<SpaceDto>.Success(spaceToReturn);
     }
-
     public async Task<Result<PagedResponse<SpaceDto>>> GetSpacesByWorkspaceIdAsync(int workspaceId, string userId, QueryFilter queryFilter)
     {
         var workspace = await workspaceRepo.GetByIdAsync(workspaceId);
@@ -66,6 +65,20 @@ public class SpaceService(IUnitOfWork unitOfWork,
         var isMember = await workspaceMemberRepo.Find(new WorkSpaceMemberSpecification(space.WorkspaceId, userId));
         if (isMember is null)
             return Result<SpaceDto>.Failure(SpaceErrors.AccessDenied);
+        var spaceToReturn = mapper.Map<SpaceDto>(space);
+        return Result<SpaceDto>.Success(spaceToReturn);
+    }
+    public async Task<Result<SpaceDto>> UpdateSpaceAsync(int spaceId, PatchSpaceDto patchSpaceDto, string userId)
+    {
+        var specification = new SpaceByIdWithWorkspaceSpecification(spaceId);
+        var space = await spaceRepo.Find(specification);
+        if (space is null)
+            return Result<SpaceDto>.Failure(SpaceErrors.NotFound);
+        var isOwner = space.Workspace.OwnerId == userId;
+        if (!isOwner)
+            return Result<SpaceDto>.Failure(SpaceErrors.AccessDenied);
+        mapper.Map(patchSpaceDto, space);
+        await unitOfWork.SaveAsync();
         var spaceToReturn = mapper.Map<SpaceDto>(space);
         return Result<SpaceDto>.Success(spaceToReturn);
     }
