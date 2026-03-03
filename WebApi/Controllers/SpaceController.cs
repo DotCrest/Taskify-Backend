@@ -15,7 +15,7 @@ public class SpaceController(ISpaceService spaceService,
                              IValidator<CreateSpaceDto> createSpaceValidator,
                              IValidator<PatchSpaceDto> patchSpaceValidator) : BaseApiController
 {
-    [HttpPost("create")]
+    [HttpPost]
     [Authorize(Roles = Role.Admin)]
     [ProducesResponseType(typeof(SpaceDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
@@ -33,7 +33,7 @@ public class SpaceController(ISpaceService spaceService,
             onSuccess: res => Ok(res),
             onFailure: err => HandleFailure(err));
     }
-    [HttpGet("get-all")]
+    [HttpGet]
     [Authorize]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status403Forbidden)]
@@ -59,7 +59,7 @@ public class SpaceController(ISpaceService spaceService,
             onSuccess: res => Ok(res),
             onFailure: err => HandleFailure(err));
     }
-    [HttpPatch("edit/{spaceId}")]
+    [HttpPatch("{spaceId}")]
     [Authorize(Roles = Role.Admin)]
     [ProducesResponseType(typeof(SpaceDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
@@ -75,5 +75,19 @@ public class SpaceController(ISpaceService spaceService,
         return result.Map<ActionResult<SpaceDto>>(
             onSuccess: res => Ok(res),
             onFailure: err => HandleFailure(err));
+    }
+    [HttpDelete("{spaceId}")]
+    [Authorize(Roles = Role.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult> DeleteSpace(int spaceId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var result = await spaceService.DeleteSpaceAsync(spaceId, userId!);
+        return result.Map(
+            onSuccess: res => NoContent(),
+            onFailure: err => HandleFailure(err));
+
     }
 }
