@@ -1,4 +1,5 @@
 ﻿using Application.ServiceAbstractions;
+using Application.Specifications.CategorySpecifications;
 using Application.Specifications.QuestSpecifications;
 using Domain.Contracts;
 using Domain.Models;
@@ -7,14 +8,18 @@ namespace Application.Services;
 
 public class QuestService(IUnitOfWork unitOfWork) : IQuestService
 {
-    private readonly IGenericRepository<Quest> repo = unitOfWork.Repository<Quest>();
-    public async Task DetachQuestFromWorkspace(int workspaceId, CancellationToken cancellationToken = default)
+    private readonly IGenericRepository<Quest> questRepo = unitOfWork.Repository<Quest>();
+    private readonly IGenericRepository<Category> categoryRepo = unitOfWork.Repository<Category>();
+    public async Task BulkUpdateQuestCategoryAsync(int workspaceId, int? categoryId = (int?)null)
     {
-        var spec = new QuestsByWorkspaceSpecification(workspaceId);
-        await repo.BulkUpdateAsync(
-            spec,
-            setters => setters.SetProperty(q => q.CategoryId, (int?)null),
-            cancellationToken
+        var categorySpec = new CategoryByWorkspaceSpecification(workspaceId);
+        var categories = await categoryRepo.FindAll(categorySpec);
+        var categoryIds = categories.Select(c => c.Id).ToList();
+
+        var questSpec = new QuestsByCategorySpecification(categoryIds);
+        await questRepo.BulkUpdateAsync(
+            questSpec,
+            setters => setters.SetProperty(q => q.CategoryId, categoryId)
         );
     }
 }
