@@ -82,4 +82,17 @@ public class SpaceService(IUnitOfWork unitOfWork,
         var spaceToReturn = mapper.Map<SpaceDto>(space);
         return Result<SpaceDto>.Success(spaceToReturn);
     }
+    public async Task<Result<bool>> DeleteSpaceAsync(int spaceId, string userId)
+    {
+        var specification = new SpaceByIdWithWorkspaceSpecification(spaceId);
+        var space = await spaceRepo.Find(specification);
+        if (space is null)
+            return Result<bool>.Failure(SpaceErrors.NotFound);
+        var isOwner = space.Workspace.OwnerId == userId;
+        if (!isOwner)
+            return Result<bool>.Failure(SpaceErrors.AccessDenied);
+        spaceRepo.Delete(space);
+        await unitOfWork.SaveAsync();
+        return Result<bool>.Success(true);
+    }
 }
