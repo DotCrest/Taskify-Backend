@@ -61,6 +61,20 @@ namespace Application.Services
             var tagToReturn = mapper.Map<TagToReturnDto>(tag);
             return Result<TagToReturnDto>.Success(tagToReturn);
         }
+        public async Task<Result<bool>> DeleteTagByIdAsync(int tagId, string userId)
+        {
+            var tag = await tagRepo.GetByIdAsync(tagId);
+            if (tag == null)
+                return Result<bool>.Failure(TagErrors.NotFound);
+
+            var validation = await CheckWorkspaceExistenceAndUserAccessAsync(tag.WorkspaceId, userId);
+            if (!validation.IsSuccess)
+                return Result<bool>.Failure(validation.ErrorsList);
+
+            tagRepo.Delete(tag);
+            await unitOfWork.SaveAsync();
+            return Result<bool>.Success(true);
+        }
         public async Task DeleteAllTagsRelatedToWorkspace(int workSpaceId, CancellationToken cancellationToken = default)
         {
             await tagRepo.BulkDeleteAsync(t => t.WorkspaceId == workSpaceId, cancellationToken);
