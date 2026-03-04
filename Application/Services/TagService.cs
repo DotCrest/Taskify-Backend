@@ -2,6 +2,7 @@
 using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Errors;
+using Application.Specifications.TagSpecifiacations;
 using Application.Specifications.WorkspaceSpecifications;
 using AutoMapper;
 using Domain.Contracts;
@@ -16,13 +17,14 @@ namespace Application.Services
         private readonly IGenericRepository<Workspace> workspaceRepo = unitOfWork.Repository<Workspace>();
         public async Task<Result<TagToReturnDto>> CreateTagAsync(TagDto tagDto, string userId)
         {
-            var workspaceSpecification = new WorkspaceGetByIdSpecification(tagDto.WorkspaceId);
-            var workspace = await workspaceRepo.Find(workspaceSpecification);
-            if (workspace == null)
-                return Result<TagToReturnDto>.Failure(WorkspaceErrors.NotFound);
-            var isMember = workspace.WorkspaceMembers.Any(x => x.UserId == userId);
-            if (!isMember)
-                return Result<TagToReturnDto>.Failure(TagErrors.AccessDenied);
+            var validation = await CheckWorkspaceExistenceAndUserAccessAsync(tagDto.WorkspaceId, userId);
+            if (!validation.IsSuccess)
+                return Result<TagToReturnDto>.Failure(validation.ErrorsList);
+
+            var existedTag = await CheckIfTagAlreadyExists(tagDto.Name, tagDto.WorkspaceId);
+            if (existedTag is not null)
+                return Result<TagToReturnDto>.Failure(TagErrors.AlreadyExisted);
+
             var tag = mapper.Map<Tag>(tagDto);
             await tagRepo.AddAsync(tag);
             await unitOfWork.SaveAsync();
@@ -33,6 +35,22 @@ namespace Application.Services
         public async Task DeleteAllTagsRelatedToWorkspace(int workSpaceId, CancellationToken cancellationToken = default)
         {
             await tagRepo.BulkDeleteAsync(t => t.WorkspaceId == workSpaceId, cancellationToken);
+        }
+        private async Task<Tag?> CheckIfTagAlreadyExists(string tagName, int workspaceId)
+        {
+            var tagSpecification = new TagByNameAndWorkspaceSpecification(tagName, workspaceId);
+            return await tagRepo.Find(tagSpecification);
+        }
+        private async Task<Result<bool>> CheckWorkspaceExistenceAndUserAccessAsync(int workspaceId, string userId)
+        {
+            var workspaceSpecification = new WorkspaceGetByIdSpecification(workspaceId);
+            var workspace = await workspaceRepo.Find(workspaceSpecification);
+            if (workspace == null)
+                return Result<bool>.Failure(WorkspaceErrors.NotFound);
+            var isMember = workspace.WorkspaceMembers.Any(x => x.UserId == userId);
+            if (!isMember)
+                return Result<bool>.Failure(TagErrors.AccessDenied);
+            return Result<bool>.Success(true);
         }
     }
 }
