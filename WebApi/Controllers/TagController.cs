@@ -49,7 +49,6 @@ public class TagController(ITagService tagService,
     }
     [HttpGet("{tagId}")]
     [Authorize]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(TagToReturnDto), StatusCodes.Status200OK)]
@@ -59,6 +58,20 @@ public class TagController(ITagService tagService,
         var result = await tagService.GetTagByIdAsync(tagId, userId!);
         return result.Map<ActionResult<TagToReturnDto>>(
             onSuccess: tag => Ok(tag),
+            onFailure: err => HandleFailure(err));
+    }
+
+    [HttpDelete("{tagId}")]
+    [Authorize]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<ActionResult> DeleteByIdAsync(int tagId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var result = await tagService.DeleteTagByIdAsync(tagId, userId!);
+        return result.Map<ActionResult>(
+            onSuccess: _ => NoContent(),
             onFailure: err => HandleFailure(err));
     }
 }
