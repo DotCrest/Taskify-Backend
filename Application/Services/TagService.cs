@@ -2,6 +2,7 @@
 using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Errors;
+using Application.Shared.Pagination;
 using Application.Specifications.TagSpecifiacations;
 using Application.Specifications.WorkspaceSpecifications;
 using AutoMapper;
@@ -31,7 +32,22 @@ namespace Application.Services
             var tagToReturnDto = mapper.Map<TagToReturnDto>(tag);
             return Result<TagToReturnDto>.Success(tagToReturnDto);
         }
+        public async Task<Result<PagedResponse<TagToReturnDto>>> GetAllTagsAsync(QueryFilter queryFilter, int workspaceId, string userId)
+        {
+            var validation = await CheckWorkspaceExistenceAndUserAccessAsync(workspaceId, userId);
+            if (!validation.IsSuccess)
+                return Result<PagedResponse<TagToReturnDto>>.Failure(validation.ErrorsList);
 
+            var countspecification = new TagByWorkspaceCountSpecification(workspaceId);
+            var tagsCount = await tagRepo.CountAsync(countspecification);
+
+            var specification = new TagByWorkspaceSpecification(queryFilter, workspaceId);
+            var tags = await tagRepo.FindAll(specification);
+            var tagsToReturnDto = mapper.Map<IEnumerable<TagToReturnDto>>(tags);
+
+            var pagedResponse = new PagedResponse<TagToReturnDto>(tagsToReturnDto, queryFilter.PageNumber, queryFilter.PageSize, tagsCount);
+            return Result<PagedResponse<TagToReturnDto>>.Success(pagedResponse);
+        }
         public async Task DeleteAllTagsRelatedToWorkspace(int workSpaceId, CancellationToken cancellationToken = default)
         {
             await tagRepo.BulkDeleteAsync(t => t.WorkspaceId == workSpaceId, cancellationToken);
