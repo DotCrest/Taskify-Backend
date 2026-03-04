@@ -48,6 +48,19 @@ namespace Application.Services
             var pagedResponse = new PagedResponse<TagToReturnDto>(tagsToReturnDto, queryFilter.PageNumber, queryFilter.PageSize, tagsCount);
             return Result<PagedResponse<TagToReturnDto>>.Success(pagedResponse);
         }
+        public async Task<Result<TagToReturnDto>> GetTagByIdAsync(int tagId, string userId)
+        {
+            var tag = await tagRepo.GetByIdAsync(tagId);
+            if (tag == null)
+                return Result<TagToReturnDto>.Failure(TagErrors.NotFound);
+
+            var validation = await CheckWorkspaceExistenceAndUserAccessAsync(tag.WorkspaceId, userId);
+            if (!validation.IsSuccess)
+                return Result<TagToReturnDto>.Failure(validation.ErrorsList);
+
+            var tagToReturn = mapper.Map<TagToReturnDto>(tag);
+            return Result<TagToReturnDto>.Success(tagToReturn);
+        }
         public async Task DeleteAllTagsRelatedToWorkspace(int workSpaceId, CancellationToken cancellationToken = default)
         {
             await tagRepo.BulkDeleteAsync(t => t.WorkspaceId == workSpaceId, cancellationToken);

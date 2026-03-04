@@ -8,6 +8,7 @@ namespace Application.ServiceAbstractions
     {
         Task<Result<TagToReturnDto>> CreateTagAsync(TagDto tagDto, string userId);
         Task<Result<PagedResponse<TagToReturnDto>>> GetAllTagsAsync(QueryFilter queryFilter, int workspaceId, string userId);
+        Task<Result<TagToReturnDto>> GetTagByIdAsync(int tagId, string userId);
         Task DeleteAllTagsRelatedToWorkspace(int workSpaceId, CancellationToken cancellationToken = default);
 
     }
