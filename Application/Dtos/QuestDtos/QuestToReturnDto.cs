@@ -14,7 +14,7 @@ namespace Application.Dtos.QuestDtos
         public string Priority { get; set; } = null!;
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = null!;
-        public ICollection<UserQuestDto> UserQuests { get; set; } = [];
+        public ICollection<UserQuestDto> Assignees { get; set; } = [];
         public ICollection<TagToReturnDto> Tags { get; set; } = [];
         public string AuthorName { get; set; } = null!;
     }
