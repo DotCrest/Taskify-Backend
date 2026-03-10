@@ -31,9 +31,9 @@ public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IW
     public async Task<Result<PagedResponse<QuestToReturnDto>>> GetAllQuests(string userId, int spaceId, QueryFilter queryFilter)
     {
         var space = await spaceService.GetSpaceByIdAsync(spaceId, userId);
-        if (space == null)
+        if (!space.IsSuccess)
             return Result<PagedResponse<QuestToReturnDto>>.Failure(SpaceErrors.NotFound);
-        var isMember = await IsUserMemberOfWorkspace(userId, space.Value.WorkspaceId);
+        var isMember = await IsUserMemberOfWorkspace(userId, space.Value!.WorkspaceId);
         if (isMember == false)
             return Result<PagedResponse<QuestToReturnDto>>.Failure(WorkspaceErrors.AccessDenied);
         var questspec = new GetAllQuestSpecification(queryFilter, spaceId);
