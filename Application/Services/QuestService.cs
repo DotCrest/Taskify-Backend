@@ -5,12 +5,13 @@ using Application.Shared.Errors;
 using Application.Shared.Pagination;
 using Application.Specifications.CategorySpecifications;
 using Application.Specifications.QuestSpecifications;
+using AutoMapper;
 using Domain.Contracts;
 using Domain.Models;
 
 namespace Application.Services;
 
-public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IWorkSpaceMemberService workSpaceMemberService) : IQuestService
+public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IWorkSpaceMemberService workSpaceMemberService, IMapper mapper) : IQuestService
 {
     private readonly IGenericRepository<Quest> questRepo = unitOfWork.Repository<Quest>();
     private readonly IGenericRepository<Category> categoryRepo = unitOfWork.Repository<Category>();
@@ -39,6 +40,9 @@ public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IW
         var countspec = new QuestCountSpecification(spaceId);
         var totalRecords = await questRepo.CountAsync(countspec);
         var quests = await questRepo.FindAll(questspec);
+        var data = mapper.Map<IEnumerable<QuestToReturnDto>>(quests);
+        var pagedResponse = new PagedResponse<QuestToReturnDto>(data, queryFilter.PageNumber, queryFilter.PageSize, totalRecords);
+        return Result<PagedResponse<QuestToReturnDto>>.Success(pagedResponse);
 
     }
     private async Task<bool> IsUserMemberOfWorkspace(string userId, int workspaceId)
