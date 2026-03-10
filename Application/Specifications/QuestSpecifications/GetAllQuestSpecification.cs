@@ -9,7 +9,7 @@ namespace Application.Specifications.QuestSpecifications
             : base(q => q.SpaceId == spaceId)
         {
             AddInclude(q => q.Category);
-
+            AddInclude(q => q.Assignees);
             AddInclude(q => q.Tags);
             AddInclude(q => q.Author);
             ApplyPagination(queryFilter.PageSize, queryFilter.PageNumber);
