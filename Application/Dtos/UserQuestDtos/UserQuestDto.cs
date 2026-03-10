@@ -4,6 +4,6 @@
     {
         public int UserId { get; set; }
         public string UserName { get; set; } = null!;
-        public string? Avatag { get; set; }
+        public string? Avatar { get; set; }
     }
 }
