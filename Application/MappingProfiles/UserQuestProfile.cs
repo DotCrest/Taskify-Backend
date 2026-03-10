@@ -14,7 +14,7 @@ namespace Application.MappingProfiles
                 .ForMember(dest => dest.Avatar,
                 opt => opt.MapFrom(src => src.User!.PhotoUrl))
                 .ForMember(dest => dest.UserId,
-                opt => opt.MapFrom(src => src.User.Id));
+                opt => opt.MapFrom(src => src.UserId));
 
         }
     }
