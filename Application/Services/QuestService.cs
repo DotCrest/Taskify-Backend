@@ -30,7 +30,7 @@ public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IW
 
     public async Task<Result<PagedResponse<QuestToReturnDto>>> GetAllQuests(string userId, int spaceId, QueryFilter queryFilter)
     {
-        var space = await spaceService.GetSpaceByIdAsync(spaceId, userId);
+        var space = await spaceService.GetSpaceAsync(spaceId);
         if (!space.IsSuccess)
             return Result<PagedResponse<QuestToReturnDto>>.Failure(SpaceErrors.NotFound);
         var isMember = await IsUserMemberOfWorkspace(userId, space.Value!.WorkspaceId);
