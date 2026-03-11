@@ -2,5 +2,5 @@
 
 public interface IQuestService
 {
-    Task DetachQuestFromWorkspace(int workspaceId, CancellationToken cancellationToken = default);
+    Task BulkUpdateQuestCategoryAsync(int workspaceId, int? categoryId = (int?)null);
 }

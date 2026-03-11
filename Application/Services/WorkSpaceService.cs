@@ -132,7 +132,7 @@ namespace Application.Services
             {
                 await unitOfWork.ExecuteInTransactionAsync(async () =>
                 {
-                    await questService.DetachQuestFromWorkspace(workspaceId);
+                    await questService.BulkUpdateQuestCategoryAsync(workspaceId);
                     await tagService.DeleteAllTagsRelatedToWorkspace(workspaceId);
                     await invitationService.BulkDeleteInvitationsByCriteria(w => w.WorkspaceId == workspaceId);
                     repo.Delete(workspace);
