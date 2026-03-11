@@ -45,6 +45,24 @@ public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IW
         return Result<PagedResponse<QuestToReturnDto>>.Success(pagedResponse);
 
     }
+
+    public async Task<Result<QuestToReturnDto>> GetQuestByIdAsync(string userId, int questId, int spaceId)
+    {
+        var space = await spaceService.GetSpaceAsync(spaceId);
+        if (!space.IsSuccess)
+            return Result<QuestToReturnDto>.Failure(SpaceErrors.NotFound);
+        var isMember = await IsUserMemberOfWorkspace(userId, space.Value!.WorkspaceId);
+        if (isMember == false)
+            return Result<QuestToReturnDto>.Failure(WorkspaceErrors.AccessDenied);
+        var spec = new GetQuestByIdSpecification(questId, spaceId);
+        var quest = await questRepo.Find(spec);
+        if (quest == null)
+            return Result<QuestToReturnDto>.Failure(QuestErrors.NotFound);
+        var questToReturn = mapper.Map<QuestToReturnDto>(quest);
+        return Result<QuestToReturnDto>.Success(questToReturn);
+
+    }
+
     private async Task<bool> IsUserMemberOfWorkspace(string userId, int workspaceId)
     {
         var workSpaceMember = await workSpaceMemberService.GetWorkSpaceMemberAsync(workspaceId, userId);
