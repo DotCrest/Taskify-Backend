@@ -11,22 +11,12 @@ using Domain.Models;
 
 namespace Application.Services;
 
-public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IWorkSpaceMemberService workSpaceMemberService, IMapper mapper) : IQuestService
+public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IWorkSpaceMemberService workSpaceMemberService, IMapper mapper
+    , ICategoryService categoryService) : IQuestService
 {
     private readonly IGenericRepository<Quest> questRepo = unitOfWork.Repository<Quest>();
     private readonly IGenericRepository<Category> categoryRepo = unitOfWork.Repository<Category>();
-    public async Task BulkUpdateQuestCategoryAsync(int workspaceId, int? categoryId = (int?)null)
-    {
-        var categorySpec = new CategoryByWorkspaceSpecification(workspaceId);
-        var categories = await categoryRepo.FindAll(categorySpec);
-        var categoryIds = categories.Select(c => c.Id).ToList();
 
-        var questSpec = new QuestsByCategorySpecification(categoryIds);
-        await questRepo.BulkUpdateAsync(
-            questSpec,
-            setters => setters.SetProperty(q => q.CategoryId, categoryId)
-        );
-    }
 
     public async Task<Result<PagedResponse<QuestToReturnDto>>> GetAllQuests(string userId, int spaceId, QueryFilter queryFilter)
     {
@@ -63,6 +53,47 @@ public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IW
 
     }
 
+    public async Task<Result<QuestToReturnDto>> CreateQuestAsync(string userId, QuestToCreateDto createQuestDto, int spaceId)
+    {
+        var space = await spaceService.GetSpaceAsync(spaceId);
+        if (!space.IsSuccess)
+            return Result<QuestToReturnDto>.Failure(SpaceErrors.NotFound);
+        if (createQuestDto.CategoryId != null)
+        {
+            var isMember = await categoryService.IsCategoryInWorkSpaceAsync(space.Value!.WorkspaceId, createQuestDto.CategoryId.Value);
+            if (!isMember.IsSuccess)
+                return Result<QuestToReturnDto>.Failure(WorkspaceErrors.AccessDenied);
+        }
+        var Quest = new Quest()
+        {
+            Title = createQuestDto.Title,
+            Description = createQuestDto.Description,
+            CreatedAt = DateTime.UtcNow,
+            SpaceId = spaceId,
+            CategoryId = createQuestDto.CategoryId,
+            AuthorId = userId,
+            Status = (QuestStatusEnum)createQuestDto.Status,
+            Priority = (PriorityEnum)createQuestDto.Priority,
+        };
+        await questRepo.AddAsync(Quest);
+        var isCreated = await unitOfWork.SaveAsync();
+        if (isCreated <= 0)
+            return Result<QuestToReturnDto>.Failure(QuestErrors.CreatedFailed);
+        var questToReturn = mapper.Map<QuestToReturnDto>(Quest);
+        return Result<QuestToReturnDto>.Success(questToReturn);
+    }
+    public async Task BulkUpdateQuestCategoryAsync(int workspaceId, int? categoryId = (int?)null)
+    {
+        var categorySpec = new CategoryByWorkspaceSpecification(workspaceId);
+        var categories = await categoryRepo.FindAll(categorySpec);
+        var categoryIds = categories.Select(c => c.Id).ToList();
+
+        var questSpec = new QuestsByCategorySpecification(categoryIds);
+        await questRepo.BulkUpdateAsync(
+            questSpec,
+            setters => setters.SetProperty(q => q.CategoryId, categoryId)
+        );
+    }
     private async Task<bool> IsUserMemberOfWorkspace(string userId, int workspaceId)
     {
         var workSpaceMember = await workSpaceMemberService.GetWorkSpaceMemberAsync(workspaceId, userId);
