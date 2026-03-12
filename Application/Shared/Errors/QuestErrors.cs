@@ -6,5 +6,7 @@ namespace Application.Shared.Errors
     {
         public static readonly Error NotFound
             = new("Quest.NotFound", "The specified quest was not found.");
+        public static readonly Error CreatedFailed
+            = new("Quest.CreatedFailed", "Failed to create the quest.");
     }
 }
