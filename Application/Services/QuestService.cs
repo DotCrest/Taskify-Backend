@@ -60,7 +60,7 @@ public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IW
             return Result<QuestToReturnDto>.Failure(SpaceErrors.NotFound);
         if (createQuestDto.CategoryId != null)
         {
-            var isMember = await categoryService.IsCategoryInWorkSpaceAsync(space.Value!.WorkspaceId, createQuestDto.CategoryId.Value);
+            var isMember = await categoryService.IsCategoryInWorkSpaceAsync(createQuestDto.CategoryId.Value, space.Value!.WorkspaceId);
             if (!isMember.IsSuccess)
                 return Result<QuestToReturnDto>.Failure(WorkspaceErrors.AccessDenied);
         }
