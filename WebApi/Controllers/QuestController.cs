@@ -11,7 +11,7 @@ namespace WebApi.Controllers
 {
     [ApiController]
     [Route("api/[Controller]")]
-    public class QuestController(IValidator<QueryFilter> validator, IQuestService questService) : BaseApiController
+    public class QuestController(IValidator<QueryFilter> validator, IQuestService questService, IValidator<QuestToCreateDto> CreateQuestValidator) : BaseApiController
     {
         [HttpGet("space/{spaceid:int}")]
         [Authorize]
@@ -19,7 +19,7 @@ namespace WebApi.Controllers
         [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<PagedResponse<QuestToReturnDto>>> GetAll([FromQuery] QueryFilter queryFilter, int spaceid)
+        public async Task<ActionResult<PagedResponse<QuestToReturnDto>>> GetAllQuests([FromQuery] QueryFilter queryFilter, int spaceid)
         {
             var queryFilterValidation = await ExecuteWithValidation(validator, queryFilter);
             if (!queryFilterValidation.IsSuccess)
@@ -40,7 +40,7 @@ namespace WebApi.Controllers
         [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(Error), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<QuestToReturnDto>> GetById(int spaceId, int questId)
+        public async Task<ActionResult<QuestToReturnDto>> GetQuestById(int spaceId, int questId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
@@ -48,6 +48,27 @@ namespace WebApi.Controllers
             var result = await questService.GetQuestByIdAsync(userId!, questId, spaceId);
             return result.Map(
                 onSuccess: res => Ok(res),
+                onFailure: err => HandleFailure(err)
+            );
+        }
+        [HttpPost("/spaces/{spaceId:int}/quests")]
+        [Authorize]
+        [ProducesResponseType(typeof(QuestToReturnDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(Error), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(Error), StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<QuestToReturnDto>> CreateQuest(int spaceId, [FromBody] QuestToCreateDto createQuestDto)
+        {
+            var validationResult = await ExecuteWithValidation(CreateQuestValidator, createQuestDto);
+            if (!validationResult.IsSuccess)
+                return HandleFailure(validationResult.ErrorsList);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            var result = await questService.CreateQuestAsync(userId!, createQuestDto, spaceId);
+            return result.Map(
+                onSuccess: res => CreatedAtAction(nameof(GetQuestById), new { spaceId = spaceId, questId = res.Id }, res),
                 onFailure: err => HandleFailure(err)
             );
         }
