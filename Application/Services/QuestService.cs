@@ -82,6 +82,33 @@ public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IW
         var questToReturn = mapper.Map<QuestToReturnDto>(Quest);
         return Result<QuestToReturnDto>.Success(questToReturn);
     }
+    public async Task<Result<bool>> UpdateQuestAsync(string userId, int questId, int spaceId, QuestToUpdateDto updateQuestDto)
+    {
+        var quest = await questRepo.GetByIdAsync(questId);
+        if (quest is null || quest.SpaceId != spaceId)
+            return Result<bool>.Failure(QuestErrors.NotFound);
+        var space = await spaceService.GetSpaceAsync(spaceId);
+        if (!space.IsSuccess)
+            return Result<bool>.Failure(SpaceErrors.NotFound);
+        if (updateQuestDto.CategoryId != null && updateQuestDto.CategoryId != quest.CategoryId)
+        {
+            var isCategoryValid = await categoryService.IsCategoryInWorkSpaceAsync(updateQuestDto.CategoryId.Value, space.Value!.WorkspaceId);
+            if (!isCategoryValid.IsSuccess)
+                return Result<bool>.Failure(WorkspaceErrors.AccessDenied);
+        }
+        quest.Title = updateQuestDto.Title;
+        quest.Description = updateQuestDto.Description;
+        quest.CategoryId = updateQuestDto.CategoryId;
+        quest.Status = (QuestStatusEnum)updateQuestDto.Status;
+        quest.Priority = (PriorityEnum)updateQuestDto.Priority;
+        questRepo.Update(quest);
+
+        var result = await unitOfWork.SaveAsync() > 0;
+
+        return result
+            ? Result<bool>.Success(true)
+            : Result<bool>.Failure(QuestErrors.UpdatedFailed);
+    }
     public async Task BulkUpdateQuestCategoryAsync(int workspaceId, int? categoryId = (int?)null)
     {
         var categorySpec = new CategoryByWorkspaceSpecification(workspaceId);
@@ -102,4 +129,5 @@ public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IW
         return false;
 
     }
+
 }
