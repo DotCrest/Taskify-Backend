@@ -11,7 +11,8 @@ namespace WebApi.Controllers
 {
     [ApiController]
     [Route("api/[Controller]")]
-    public class QuestController(IValidator<QueryFilter> validator, IQuestService questService, IValidator<QuestToCreateDto> CreateQuestValidator) : BaseApiController
+    public class QuestController(IValidator<QueryFilter> validator, IQuestService questService, IValidator<QuestToCreateDto> CreateQuestValidator
+        , IValidator<QuestToUpdateDto> updateQuestValidator) : BaseApiController
     {
         [HttpGet("space/{spaceid:int}")]
         [Authorize]
@@ -69,6 +70,27 @@ namespace WebApi.Controllers
             var result = await questService.CreateQuestAsync(userId!, createQuestDto, spaceId);
             return result.Map(
                 onSuccess: res => CreatedAtAction(nameof(GetQuestById), new { spaceId = spaceId, questId = res.Id }, res),
+                onFailure: err => HandleFailure(err)
+            );
+        }
+        [HttpPut("/spaces/{spaceId:int}/quests/{questId:int}")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(Error), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(Error), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<bool>> UpdateQuest(int spaceId, int questId, [FromBody] QuestToUpdateDto updateQuestDto)
+        {
+            var validationResult = await ExecuteWithValidation(updateQuestValidator, updateQuestDto);
+            if (!validationResult.IsSuccess)
+                return HandleFailure(validationResult.ErrorsList);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            var result = await questService.UpdateQuestAsync(userId, questId, spaceId, updateQuestDto);
+            return result.Map(
+                onSuccess: res => NoContent(),
                 onFailure: err => HandleFailure(err)
             );
         }
