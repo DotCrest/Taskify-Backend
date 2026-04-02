@@ -10,7 +10,8 @@ namespace Application.Services;
 
 public class UserQuestService(IUnitOfWork unitOfWork,
                               IMapper mapper,
-                              IQuestService questService) : IUserQuestService
+                              IQuestService questService,
+                              IWorkSpaceMemberService workSpaceMemberService) : IUserQuestService
 {
     private IGenericRepository<UserQuest> userQuestsRepository = unitOfWork.Repository<UserQuest>();
     public async Task<Result<UserQuestDto>> AssignUserToQuest(UserToQuestDto addUserToQuestDto)
@@ -51,7 +52,9 @@ public class UserQuestService(IUnitOfWork unitOfWork,
         if (!isQuestExist)
             return Result<bool>.Failure(QuestErrors.NotFound);
 
-        // TODO: check if the user exists in the same space, and return appropriate errors if not.
+        var isUserInWorkspace = await workSpaceMemberService.IsUserInWorkSpaceAsync(userToQuestDto.WorkspaceId, userToQuestDto.UserId);
+        if (!isUserInWorkspace)
+            return Result<bool>.Failure(WorkspaceErrors.UserNotInWorkspace);
 
         return Result<bool>.Success(true);
     }
