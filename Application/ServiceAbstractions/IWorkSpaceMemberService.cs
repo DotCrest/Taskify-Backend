@@ -6,5 +6,6 @@ namespace Application.ServiceAbstractions
     {
         Task<WorkspaceMember?> GetWorkSpaceMemberAsync(int workspaceId, string userId);
         Task AddWorkSpaceMemberAsync(WorkspaceMember workspaceMember);
+        Task<bool> IsUserInWorkSpaceAsync(int workspaceId, string userId);
     }
 }

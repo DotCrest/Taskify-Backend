@@ -14,4 +14,6 @@ public static class WorkspaceErrors
         new Error("Workspace.UpdateFailed", "An error occurred while updating the workspace");
     public static readonly Error DeleteFailed =
         new Error("Workspace.DeleteFailed", "An error occurred while deleting the workspace");
+    public static readonly Error UserNotInWorkspace =
+        new Error("Workspace.UserNotInWorkspace", "The user is not a member of the workspace");
 }
