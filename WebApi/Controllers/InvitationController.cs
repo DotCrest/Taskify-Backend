@@ -20,47 +20,14 @@ public class InvitationController(IInvitationService invitationService,
                                   IValidator<QueryFilter> queryFilterValidator) : BaseApiController
 {
     [Authorize(Roles = Role.Admin)]
-    [HttpPost("send-invitation")]
-    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<BaseToReturnDto>> SendInvitation(SendInvitationDto sendInvitationDto)
+    [HttpGet("all")]
+    [ProducesResponseType(typeof(PagedResponse<InvitationDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResponse<InvitationDto>>> GetAllInvitations([FromQuery] QueryFilter queryFilter, [FromQuery] int workspaceId)
     {
-        // validation
-        var validation = await ExecuteWithValidation(sendInvitationValidator, sendInvitationDto);
-        if (!validation.IsSuccess)
-            return HandleFailure(validation.ErrorsList);
-        // business logic
-        var senderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var result = await invitationService.SendInvitationAsync(sendInvitationDto, senderId!);
-        return result.Map<ActionResult<BaseToReturnDto>>(
-            onSuccess: res => Ok(res),
-            onFailure: err => HandleFailure(err)
-        );
-    }
-    [HttpGet("validate-invitation")]
-    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<InviteValidationDto>> ValidateInvitation([FromQuery] string token)
-    {
-        var result = await invitationService.ValidateInvitationAsync(token);
-        return result.Map<ActionResult<InviteValidationDto>>(
-            onSuccess: res => Ok(res),
-            onFailure: err => HandleFailure(err)
-        );
-    }
-    [HttpPost("accept-invitation")]
-    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BaseToReturnDto>> AcceptInvitation([FromQuery] string token)
-    {
-        var result = await invitationService.AcceptInvitationAsync(token);
-        return result.Map<ActionResult<BaseToReturnDto>>(
-            onSuccess: res => Ok(res),
-            onFailure: err => HandleFailure(err)
-        );
+        var result = await invitationService.GetAllInvitationsAsync(queryFilter, workspaceId);
+        return result.Map<ActionResult<PagedResponse<InvitationDto>>>(
+        onSuccess: res => Ok(res),
+        onFailure: err => HandleFailure(err));
     }
     [HttpGet("by-status")]
     [Authorize(Roles = Role.Admin)]
@@ -84,5 +51,61 @@ public class InvitationController(IInvitationService invitationService,
             onFailure: err => HandleFailure(err)
         );
     }
+    [Authorize(Roles = Role.Admin)]
+    [HttpPost("send")]
+    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BaseToReturnDto>> SendInvitation(SendInvitationDto sendInvitationDto)
+    {
+        // validation
+        var validation = await ExecuteWithValidation(sendInvitationValidator, sendInvitationDto);
+        if (!validation.IsSuccess)
+            return HandleFailure(validation.ErrorsList);
+        // business logic
+        var senderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var result = await invitationService.SendInvitationAsync(sendInvitationDto, senderId!);
+        return result.Map<ActionResult<BaseToReturnDto>>(
+            onSuccess: res => Ok(res),
+            onFailure: err => HandleFailure(err)
+        );
+    }
+    [HttpGet("validate")]
+    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<InviteValidationDto>> ValidateInvitation([FromQuery] string token)
+    {
+        var result = await invitationService.ValidateInvitationAsync(token);
+        return result.Map<ActionResult<InviteValidationDto>>(
+            onSuccess: res => Ok(res),
+            onFailure: err => HandleFailure(err)
+        );
+    }
+    [HttpPost("accept")]
+    [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BaseToReturnDto>> AcceptInvitation([FromQuery] string token)
+    {
+        var result = await invitationService.AcceptInvitationAsync(token);
+        return result.Map<ActionResult<BaseToReturnDto>>(
+            onSuccess: res => Ok(res),
+            onFailure: err => HandleFailure(err)
+        );
+    }
 
+    // TODO: Delete invitation by Id.
+    [HttpDelete("{invitationId}")]
+    [Authorize(Roles = Role.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> DeleteInvitation(int invitationId)
+    {
+        var result = await invitationService.DeleteInvitationById(invitationId);
+        return result.Map(
+            onSuccess: res => NoContent(),
+            onFailure: err => HandleFailure(err)
+        );
+    }
 }

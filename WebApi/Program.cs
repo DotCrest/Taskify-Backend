@@ -7,6 +7,7 @@ using Domain.Models;
 using Domain.Options;
 using Domain.Settings;
 using FluentValidation;
+using Hangfire;
 using Infrastructure;
 using Infrastructure.context;
 using Infrastructure.Repository;
@@ -37,6 +38,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(opt =>
 {
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString"));
 });
+builder.Services.AddHangfire(config =>
+{
+    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnectionString"));
+});
+builder.Services.AddHangfireServer();
 builder.Services.AddAutoMapper(cfg => { }, typeof(InvitationProfile).Assembly);
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -46,7 +52,11 @@ builder.Services.AddScoped<IWorkSpaceMemberService, WorkSpaceMemberService>();
 builder.Services.AddScoped<PasswordHasher<User>>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IWorkSpaceService, WorkSpaceService>();
+builder.Services.AddScoped<IQuestService, QuestService>();
 builder.Services.AddScoped<IInvitationService, InvitationService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddScoped<ISpaceService, SpaceService>();
 builder.Services.Configure<UrlOptions>(builder.Configuration.GetSection("Urls"));
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("email-config"));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
@@ -136,5 +146,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.UseHangfireDashboard("/hangfire");
+RecurringJob.AddOrUpdate<IInvitationService>("expired-invitations-job", service => service.PeriodicUpdateOfExpiredInvitationsAsync(), Cron.Daily());
 app.Run();
