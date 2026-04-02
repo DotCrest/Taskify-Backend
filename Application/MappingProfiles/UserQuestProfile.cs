@@ -16,6 +16,11 @@ namespace Application.MappingProfiles
                 .ForMember(dest => dest.UserId,
                 opt => opt.MapFrom(src => src.UserId));
 
+            CreateMap<UserToQuestDto, UserQuest>()
+                .ForMember(dest => dest.UserId,
+                opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.QuestId,
+                opt => opt.MapFrom(src => src.QuestId));
         }
     }
 }

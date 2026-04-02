@@ -11,8 +11,11 @@ using Domain.Models;
 
 namespace Application.Services;
 
-public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IWorkSpaceMemberService workSpaceMemberService, IMapper mapper
-    , ICategoryService categoryService) : IQuestService
+public class QuestService(IUnitOfWork unitOfWork,
+                          ISpaceService spaceService,
+                          IWorkSpaceMemberService workSpaceMemberService,
+                          IMapper mapper,
+                          ICategoryService categoryService) : IQuestService
 {
     private readonly IGenericRepository<Quest> questRepo = unitOfWork.Repository<Quest>();
     private readonly IGenericRepository<Category> categoryRepo = unitOfWork.Repository<Category>();
@@ -143,5 +146,8 @@ public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IW
         return false;
 
     }
-
+    public async Task<bool> IsQuestExisted(int questId)
+    {
+        return await questRepo.AnyAsync(q => q.Id == questId);
+    }
 }
