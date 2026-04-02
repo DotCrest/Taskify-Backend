@@ -95,4 +95,12 @@ public class SpaceService(IUnitOfWork unitOfWork,
         await unitOfWork.SaveAsync();
         return Result<bool>.Success(true);
     }
+
+    public async Task<Result<Space>> GetSpaceAsync(int spaceId)
+    {
+        var spec = new SpaceByIdSpecification(spaceId);
+        var space = await spaceRepo.Find(spec);
+        if (space is null) return Result<Space>.Failure(SpaceErrors.NotFound);
+        return Result<Space>.Success(space);
+    }
 }
