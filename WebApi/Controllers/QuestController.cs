@@ -94,5 +94,23 @@ namespace WebApi.Controllers
                 onFailure: err => HandleFailure(err)
             );
         }
+        [HttpDelete("/spaces/{spaceId:int}/quests/{questId:int}")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<bool>> DeleteQuest(int spaceId, int questId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            var result = await questService.DeleteQuestAsync(userId, questId, spaceId);
+            return result.Map(
+                onSuccess: res => NoContent(),
+                onFailure: err => HandleFailure(err)
+            );
+        }
     }
 }
