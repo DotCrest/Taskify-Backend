@@ -11,5 +11,7 @@ public interface IQuestService
     Task<Result<QuestToReturnDto>> GetQuestByIdAsync(string userId, int questId, int spaceId);
     Task<Result<QuestToReturnDto>> CreateQuestAsync(string userId, QuestToCreateDto createQuestDto, int spaceId);
     Task<Result<bool>> UpdateQuestAsync(string userId, int questId, int spaceId, QuestToUpdateDto updateQuestDto);
-
+    Task<Result<bool>> DeleteQuestAsync(string userId, int questId, int spaceId);
 }
+
+

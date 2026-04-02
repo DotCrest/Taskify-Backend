@@ -10,5 +10,7 @@ namespace Application.Shared.Errors
             = new("Quest.CreatedFailed", "Failed to create the quest.");
         public static readonly Error UpdatedFailed
             = new("Quest.UpdatedFailed", "Failed to update the quest.");
+        public static readonly Error DeleteFailed
+            = new("Quest.DeleteFailed", "Failed to delete the quest.");
     }
 }

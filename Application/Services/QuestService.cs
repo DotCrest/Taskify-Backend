@@ -109,6 +109,20 @@ public class QuestService(IUnitOfWork unitOfWork, ISpaceService spaceService, IW
             ? Result<bool>.Success(true)
             : Result<bool>.Failure(QuestErrors.UpdatedFailed);
     }
+    public async Task<Result<bool>> DeleteQuestAsync(string userId, int questId, int spaceId)
+    {
+        var quest = await questRepo.GetByIdAsync(questId);
+        if (quest is null || quest.SpaceId != spaceId)
+            return Result<bool>.Failure(QuestErrors.NotFound);
+        if (quest.AuthorId != userId)
+            return Result<bool>.Failure(WorkspaceErrors.AccessDenied);
+        questRepo.Delete(quest);
+        var result = await unitOfWork.SaveAsync() > 0;
+        return result
+            ? Result<bool>.Success(true)
+            : Result<bool>.Failure(QuestErrors.DeleteFailed);
+
+    }
     public async Task BulkUpdateQuestCategoryAsync(int workspaceId, int? categoryId = (int?)null)
     {
         var categorySpec = new CategoryByWorkspaceSpecification(workspaceId);
