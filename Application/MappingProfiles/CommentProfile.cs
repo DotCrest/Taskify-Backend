@@ -11,5 +11,7 @@ public class CommentProfile : Profile
         CreateMap<AddCommentDto, Comment>()
            .ForMember(des => des.Id, opt => opt.MapFrom(_ => Guid.NewGuid().ToString()))
            .ForMember(des => des.CreatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow));
+
+        CreateMap<Comment, CommentDto>();
     }
 }
