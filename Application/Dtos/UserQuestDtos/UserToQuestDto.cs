@@ -2,7 +2,7 @@
 
 namespace Application.Dtos.UserQuestDtos;
 
-public class AddUserToQuestDto
+public class UserToQuestDto
 {
     public string UserId { get; set; } = default!;
     public int QuestId { get; set; }
