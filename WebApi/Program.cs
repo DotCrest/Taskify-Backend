@@ -55,6 +55,7 @@ builder.Services.AddScoped<PasswordHasher<User>>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IWorkSpaceService, WorkSpaceService>();
 builder.Services.AddScoped<IQuestService, QuestService>();
+builder.Services.AddScoped<IUserQuestService, UserQuestService>();
 builder.Services.AddScoped<IInvitationService, InvitationService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ITagService, TagService>();
