@@ -20,6 +20,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json.Serialization;
+using WebApi.Hubs;
 using WebApi.Hubs.HubFilters;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -169,6 +170,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<CommentHub>("/hub/comments");
 app.UseHangfireDashboard("/hangfire");
 RecurringJob.AddOrUpdate<IInvitationService>("expired-invitations-job", service => service.PeriodicUpdateOfExpiredInvitationsAsync(), Cron.Daily());
 app.Run();
