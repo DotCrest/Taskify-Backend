@@ -53,6 +53,20 @@ public class CommentService(IUnitOfWork unitOfWork,
         var commentDto = mapper.Map<CommentDto>(comment);
         return Result<CommentDto>.Success(commentDto);
     }
+    public async Task<Result<bool>> DeleteCommentAsync(int commentId, string userId)
+    {
+        var comment = await _commentRepository.Find(c => c.Id == commentId);
+
+        if (comment == null)
+            return Result<bool>.Failure(CommentErrors.NotFound);
+        if (comment.UserId != userId)
+            return Result<bool>.Failure(CommentErrors.AccessDenied);
+
+        _commentRepository.Delete(comment);
+        await unitOfWork.SaveAsync();
+
+        return Result<bool>.Success(true);
+    }
     private async Task<Result<bool>> ExternalValidationsSteps(string userId, int questId)
     {
         var isQuestExist = await questService.IsQuestExisted(questId);
