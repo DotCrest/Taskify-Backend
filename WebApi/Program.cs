@@ -14,11 +14,14 @@ using Infrastructure.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json.Serialization;
+using WebApi.Hubs;
+using WebApi.Hubs.HubFilters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -112,6 +115,21 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            // configure the logic to retrieve the token from the query string for SignalR hubs
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hub/comments"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -127,6 +145,10 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddSignalR(opt =>
+{
+    opt.AddFilter<CommentHubFilter>();
+});
 
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
@@ -148,6 +170,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<CommentHub>("/hub/comments");
 app.UseHangfireDashboard("/hangfire");
 RecurringJob.AddOrUpdate<IInvitationService>("expired-invitations-job", service => service.PeriodicUpdateOfExpiredInvitationsAsync(), Cron.Daily());
 app.Run();
