@@ -1,4 +1,5 @@
-﻿using Application.ServiceAbstractions;
+﻿using Application.Dtos.CommentDto;
+using Application.ServiceAbstractions;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 
@@ -36,6 +37,25 @@ public class CommentHub(ILogger<CommentHub> logger,
             return;
         }
         Context.Items["questId"] = parsedQuestId;
+        Context.Items["userId"] = userId;
+        await Groups.AddToGroupAsync(connectionId, questId);
+    }
+    public async Task SendComment(string comment)
+    {
+        var questId = Context.Items["questId"] as int?;
+        var userId = Context.Items["userId"] as string;
+        var addCommentDto = new AddCommentDto
+        {
+            UserComment = comment,
+            QuestId = questId!.Value,
+            UserId = userId
+        };
+
+        var result = await commentService.AddCommentAsync(addCommentDto);
+        await result.MapAsync(
+            onSuccess: res => Clients.Group(questId.ToString()!).ReceiveComment(res),
+            onFailure: err => Clients.Caller.ReceiveErrors(err)
+        );
     }
     public override Task OnDisconnectedAsync(Exception? exception)
     {
