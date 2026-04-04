@@ -48,7 +48,7 @@ public class UserQuestService(IUnitOfWork unitOfWork,
     }
     private async Task<Result<bool>> ExternalValidationsSteps(UserToQuestDto userToQuestDto)
     {
-        var isQuestExist = await questService.IsQuestExisted(userToQuestDto.QuestId);
+        var isQuestExist = await questService.IsQuestExisted(userToQuestDto.QuestId, userToQuestDto.SpaceId);
         if (!isQuestExist)
             return Result<bool>.Failure(QuestErrors.NotFound);
 

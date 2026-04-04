@@ -150,4 +150,9 @@ public class QuestService(IUnitOfWork unitOfWork,
     {
         return await questRepo.AnyAsync(q => q.Id == questId);
     }
+
+    public async Task<bool> IsQuestExisted(int questId, int spaceId)
+    {
+        return await questRepo.AnyAsync(q => q.Id == questId && q.SpaceId == spaceId);
+    }
 }
