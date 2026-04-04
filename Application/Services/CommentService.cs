@@ -27,6 +27,12 @@ public class CommentService(IUnitOfWork unitOfWork,
         var commentDto = mapper.Map<CommentDto>(comment);
         return Result<CommentDto>.Success(commentDto);
     }
+    public async Task<Result<IEnumerable<CommentDto>>> GetCommentsByPlanIdAsync(int questId)
+    {
+        var comments = await _commentRepository.FindAll(c => c.QuestId == questId);
+        var commentDtos = mapper.Map<IEnumerable<CommentDto>>(comments);
+        return Result<IEnumerable<CommentDto>>.Success(commentDtos);
+    }
     private async Task<Result<bool>> ExternalValidationsSteps(string userId, int questId)
     {
         var isQuestExist = await questService.IsQuestExisted(questId);
