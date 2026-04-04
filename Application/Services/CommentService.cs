@@ -33,6 +33,26 @@ public class CommentService(IUnitOfWork unitOfWork,
         var commentDtos = mapper.Map<IEnumerable<CommentDto>>(comments);
         return Result<IEnumerable<CommentDto>>.Success(commentDtos);
     }
+    public async Task<Result<CommentDto>> UpdateCommentAsync(UpdateCommentDto updateCommentDto)
+    {
+        var comment = await _commentRepository.Find(c => c.Id == updateCommentDto.CommentId);
+
+        if (comment == null)
+            return Result<CommentDto>.Failure(CommentErrors.NotFound);
+
+        if (comment.UserId != updateCommentDto.UserId)
+            return Result<CommentDto>.Failure(CommentErrors.AccessDenied);
+
+        if (DateTime.UtcNow > comment.CreatedAt.AddMinutes(5))
+            return Result<CommentDto>.Failure(CommentErrors.EditTimeout);
+
+        mapper.Map(updateCommentDto, comment);
+        _commentRepository.Update(comment);
+        await unitOfWork.SaveAsync();
+
+        var commentDto = mapper.Map<CommentDto>(comment);
+        return Result<CommentDto>.Success(commentDto);
+    }
     private async Task<Result<bool>> ExternalValidationsSteps(string userId, int questId)
     {
         var isQuestExist = await questService.IsQuestExisted(questId);
