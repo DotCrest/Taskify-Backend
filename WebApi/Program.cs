@@ -10,6 +10,7 @@ using FluentValidation;
 using Hangfire;
 using Infrastructure;
 using Infrastructure.context;
+using Infrastructure.DataSeeding;
 using Infrastructure.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -80,7 +81,6 @@ builder.Services.AddIdentity<User, IdentityRole>(opt =>
 }).AddEntityFrameworkStores<ApplicationDbContext>()
 .AddRoles<IdentityRole>()
 .AddDefaultTokenProviders();
-builder.Services.AddScoped<IDataSeeding, DataSeeding>();
 builder.Services.AddSwaggerGen(cfg =>
 {
     cfg.AddSecurityDefinition("BearerAuth", new OpenApiSecurityScheme
@@ -153,9 +153,14 @@ builder.Services.AddSignalR(opt =>
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
-    var dataSeeding = scope.ServiceProvider.GetRequiredService<IDataSeeding>();
-    await dataSeeding.SeedDataAsync();
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var userManager = services.GetRequiredService<UserManager<User>>();
+
+    var seeder = new DataSeeder(context, userManager);
+    await seeder.SeedAllAsync();
 }
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
