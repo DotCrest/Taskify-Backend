@@ -20,7 +20,7 @@ namespace WebApi.Controllers
         [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<PagedResponse<QuestToReturnDto>>> GetAllQuests([FromQuery] QueryFilter queryFilter, int spaceid)
+        public async Task<ActionResult<PagedResponse<QuestToReturnDto>>> GetAllQuests([FromQuery] QuestCustomQueryFilter queryFilter, int spaceid)
         {
             var queryFilterValidation = await ExecuteWithValidation(validator, queryFilter);
             if (!queryFilterValidation.IsSuccess)
