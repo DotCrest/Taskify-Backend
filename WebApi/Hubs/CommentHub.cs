@@ -1,10 +1,11 @@
 ﻿using Application.Dtos.CommentDto;
 using Application.ServiceAbstractions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 
 namespace WebApi.Hubs;
-
+[Authorize]
 public class CommentHub(ILogger<CommentHub> logger,
                         ICommentService commentService,
                         IUserQuestService userQuestService) : Hub<ICommentClient>
@@ -52,6 +53,18 @@ public class CommentHub(ILogger<CommentHub> logger,
         };
 
         var result = await commentService.AddCommentAsync(addCommentDto);
+        await result.MapAsync(
+            onSuccess: res => Clients.Group(questId.ToString()!).ReceiveComment(res),
+            onFailure: err => Clients.Caller.ReceiveErrors(err)
+        );
+    }
+    public async Task EditComment(UpdateCommentDto updateCommentDto)
+    {
+        var userId = Context.Items["userId"] as string;
+        var questId = Context.Items["questId"] as int?;
+        updateCommentDto.UserId = userId;
+
+        var result = await commentService.UpdateCommentAsync(updateCommentDto);
         await result.MapAsync(
             onSuccess: res => Clients.Group(questId.ToString()!).ReceiveComment(res),
             onFailure: err => Clients.Caller.ReceiveErrors(err)
