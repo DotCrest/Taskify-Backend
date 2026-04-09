@@ -20,7 +20,7 @@ public class UserQuestService(IUnitOfWork unitOfWork,
         if (!validationResult.IsSuccess)
             return Result<UserQuestDto>.Failure(validationResult.ErrorsList);
 
-        var isAssignedToQuest = await IsUserAssignedToQuest(addUserToQuestDto.UserId, addUserToQuestDto.QuestId);
+        var isAssignedToQuest = await IsUserAssignedToQuest(addUserToQuestDto.AssigneeId, addUserToQuestDto.QuestId);
         if (isAssignedToQuest)
             return Result<UserQuestDto>.Failure(UserQuestErrors.UserAlreadyAssigned);
 
@@ -31,17 +31,17 @@ public class UserQuestService(IUnitOfWork unitOfWork,
         var recordAfterIncludeUser = await userQuestsRepository.Find(x => x.UserId == userQuest.UserId && x.QuestId == userQuest.QuestId, u => u.User);
         return Result<UserQuestDto>.Success(mapper.Map<UserQuestDto>(recordAfterIncludeUser));
     }
-    public async Task<Result<bool>> UnAssignUserFromQuestAsync(UserToQuestDto unAssignUserDto)
+    public async Task<Result<bool>> UnAssignUserFromQuestAsync(string userId, int questId)
     {
-        var externalValidationResult = await ExternalValidationsSteps(unAssignUserDto);
-        if (!externalValidationResult.IsSuccess)
-            return Result<bool>.Failure(externalValidationResult.ErrorsList);
+        var IsQuestExisted = await questService.IsQuestExisted(questId);
+        if (!IsQuestExisted)
+            return Result<bool>.Failure(QuestErrors.NotFound);
 
-        var assignedToQuest = await IsUserAssignedToQuest(unAssignUserDto.UserId, unAssignUserDto.QuestId);
+        var assignedToQuest = await IsUserAssignedToQuest(userId, questId);
         if (!assignedToQuest)
             return Result<bool>.Failure(UserQuestErrors.UserNotAssignedToQuest);
 
-        var userQuest = await userQuestsRepository.Find(uq => uq.UserId == unAssignUserDto.UserId && uq.QuestId == unAssignUserDto.QuestId);
+        var userQuest = await userQuestsRepository.Find(uq => uq.UserId == userId && uq.QuestId == questId);
         userQuestsRepository.Delete(userQuest!);
         await unitOfWork.SaveAsync();
         return Result<bool>.Success(true);
@@ -52,8 +52,14 @@ public class UserQuestService(IUnitOfWork unitOfWork,
         if (!isQuestExist)
             return Result<bool>.Failure(QuestErrors.NotFound);
 
-        var isUserInWorkspace = await workSpaceMemberService.IsUserInWorkSpaceAsync(userToQuestDto.WorkspaceId, userToQuestDto.UserId);
+        // for user to be assigned to quest, both assigner and assignee should be in the workspace of the quest
+
+        var isUserInWorkspace = await workSpaceMemberService.IsUserInWorkSpaceAsync(userToQuestDto.WorkspaceId, userToQuestDto.AssigneeId);
         if (!isUserInWorkspace)
+            return Result<bool>.Failure(WorkspaceErrors.UserNotInWorkspace);
+
+        var isAssignerInWorkspace = await workSpaceMemberService.IsUserInWorkSpaceAsync(userToQuestDto.WorkspaceId, userToQuestDto.AssignerId!);
+        if (!isAssignerInWorkspace)
             return Result<bool>.Failure(WorkspaceErrors.UserNotInWorkspace);
 
         return Result<bool>.Success(true);

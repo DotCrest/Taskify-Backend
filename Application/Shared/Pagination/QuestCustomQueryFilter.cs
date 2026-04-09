@@ -7,7 +7,8 @@ public class QuestCustomQueryFilter : QueryFilter
     private DateTime? _createdAt;
     private DateTime? _dueDate;
     private DateTime? _updatedAt;
-
+    public string? Status { get; set; }
+    public string? Priority { get; set; }
     public int? CategoryId { get; set; }
     public int? TagId { get; set; }
     [DataType(DataType.Date)]
