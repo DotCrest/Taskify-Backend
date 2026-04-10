@@ -11,6 +11,7 @@ using Domain.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using System.Linq.Expressions;
 
 namespace Application.Tests.Services;
 
@@ -543,6 +544,163 @@ public class WorkspaceServiceTests
         result.IsSuccess.Should().BeFalse();
         result.ErrorsList.Should().HaveCount(1);
         result.ErrorsList.First().Code.Should().Be(WorkspaceErrors.UpdateFailed.Code);
+    }
+
+    #endregion
+
+    #region DeleteWorkSpaceAsync Tests
+
+    [Fact]
+    public async Task DeleteWorkSpaceAsync_WhenUserIsOwner_DeletesWorkspaceSuccessfully()
+    {
+        // Arrange
+        var workspaceId = 1;
+        var userId = "owner-id";
+        var workspace = CreateTestWorkspace(workspaceId, "Test Workspace", userId);
+
+        _workspaceRepositoryMock
+            .Setup(r => r.GetByIdAsync(workspaceId))
+            .ReturnsAsync(workspace);
+
+        _unitOfWorkMock
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>()))
+            .Returns(async (Func<Task> action) => await action());
+
+        _questServiceMock
+            .Setup(s => s.BulkUpdateQuestCategoryAsync(workspaceId, null))
+            .Returns(Task.CompletedTask);
+
+        _tagServiceMock
+            .Setup(s => s.DeleteAllTagsRelatedToWorkspace(workspaceId, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _invitationServiceMock
+            .Setup(s => s.BulkDeleteInvitationsByCriteria(It.IsAny<Expression<Func<Invitation, bool>>>()))
+            .Returns(Task.CompletedTask);
+
+        _unitOfWorkMock
+            .Setup(u => u.SaveAsync())
+            .ReturnsAsync(1);
+
+        // Act
+        var result = await _sut.DeleteWorkSpaceAsync(workspaceId, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task DeleteWorkSpaceAsync_WhenWorkspaceNotFound_ReturnsNotFoundError()
+    {
+        // Arrange
+        var workspaceId = 999;
+        var userId = "owner-id";
+
+        _workspaceRepositoryMock
+            .Setup(r => r.GetByIdAsync(workspaceId))
+            .ReturnsAsync((Workspace?)null);
+
+        // Act
+        var result = await _sut.DeleteWorkSpaceAsync(workspaceId, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList.Should().HaveCount(1);
+        result.ErrorsList.First().Code.Should().Be(WorkspaceErrors.NotFound.Code);
+    }
+
+    [Fact]
+    public async Task DeleteWorkSpaceAsync_WhenUserIsNotOwner_ReturnsAccessDeniedError()
+    {
+        // Arrange
+        var workspaceId = 1;
+        var userId = "unauthorized-user";
+        var ownerId = "owner-id";
+        var workspace = CreateTestWorkspace(workspaceId, "Test Workspace", ownerId);
+
+        _workspaceRepositoryMock
+            .Setup(r => r.GetByIdAsync(workspaceId))
+            .ReturnsAsync(workspace);
+
+        // Act
+        var result = await _sut.DeleteWorkSpaceAsync(workspaceId, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList.Should().HaveCount(1);
+        result.ErrorsList.First().Code.Should().Be(WorkspaceErrors.AccessDenied.Code);
+    }
+
+    [Fact]
+    public async Task DeleteWorkSpaceAsync_WhenTransactionFails_ReturnsDeleteFailedError()
+    {
+        // Arrange
+        var workspaceId = 1;
+        var userId = "owner-id";
+        var workspace = CreateTestWorkspace(workspaceId, "Test Workspace", userId);
+
+        _workspaceRepositoryMock
+            .Setup(r => r.GetByIdAsync(workspaceId))
+            .ReturnsAsync(workspace);
+
+        _unitOfWorkMock
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>()))
+            .ThrowsAsync(new Exception("Transaction failed"));
+
+        // Act
+        var result = await _sut.DeleteWorkSpaceAsync(workspaceId, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList.Should().HaveCount(1);
+        result.ErrorsList.First().Code.Should().Be(WorkspaceErrors.DeleteFailed.Code);
+    }
+
+    [Fact]
+    public async Task DeleteWorkSpaceAsync_ExecutesAllCleanupOperations()
+    {
+        // Arrange
+        var workspaceId = 1;
+        var userId = "owner-id";
+        var workspace = CreateTestWorkspace(workspaceId, "Test Workspace", userId);
+
+        _workspaceRepositoryMock
+            .Setup(r => r.GetByIdAsync(workspaceId))
+            .ReturnsAsync(workspace);
+
+        _unitOfWorkMock
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>()))
+            .Returns(async (Func<Task> action) => await action());
+
+        _questServiceMock
+            .Setup(s => s.BulkUpdateQuestCategoryAsync(workspaceId, null))
+            .Returns(Task.CompletedTask);
+
+        _tagServiceMock
+            .Setup(s => s.DeleteAllTagsRelatedToWorkspace(workspaceId, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _invitationServiceMock
+            .Setup(s => s.BulkDeleteInvitationsByCriteria(It.IsAny<Expression<Func<Invitation, bool>>>()))
+            .Returns(Task.CompletedTask);
+
+        _unitOfWorkMock
+            .Setup(u => u.SaveAsync())
+            .ReturnsAsync(1);
+
+        // Act
+        await _sut.DeleteWorkSpaceAsync(workspaceId, userId);
+
+        // Assert
+        _questServiceMock.Verify(s => s.BulkUpdateQuestCategoryAsync(workspaceId, null), Times.Once);
+        _tagServiceMock.Verify(s => s.DeleteAllTagsRelatedToWorkspace(workspaceId, It.IsAny<CancellationToken>()), Times.Once);
+        _invitationServiceMock.Verify(s => s.BulkDeleteInvitationsByCriteria(It.IsAny<Expression<Func<Invitation, bool>>>()), Times.Once);
+        _workspaceRepositoryMock.Verify(r => r.Delete(workspace), Times.Once);
     }
 
     #endregion
