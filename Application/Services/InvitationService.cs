@@ -26,12 +26,21 @@ public class InvitationService(IUnitOfWork unitOfWork,
     private readonly UrlOptions urlOptions = urlOptions.Value;
     private readonly IGenericRepository<Workspace> workspaceRepo = unitOfWork.Repository<Workspace>();
     private readonly IGenericRepository<Invitation> invitationRepo = unitOfWork.Repository<Invitation>();
-    public async Task<Result<PagedResponse<InvitationDto>>> GetAllInvitationsAsync(QueryFilter queryFilter, int workspaceId)
+    public async Task<Result<PagedResponse<InvitationDto>>> GetAllInvitationsAsync(QueryFilter queryFilter, GetInvitationDto getInvitationDto)
     {
-        var specification = new InvitationByWorkspaceSpecification(queryFilter, workspaceId);
-        var countSpecification = new InvitationByWorkspaceCountSpecification(workspaceId);
+        var specification = new InvitationByWorkspaceSpecification(queryFilter, getInvitationDto);
+        var countSpecification = new InvitationByWorkspaceCountSpecification(getInvitationDto);
+
+        var workspace = await workspaceRepo.GetByIdAsync(getInvitationDto.WorkspaceId);
+        if (workspace is null)
+            return Result<PagedResponse<InvitationDto>>.Failure(WorkspaceErrors.NotFound);
+
+        if (workspace.OwnerId != getInvitationDto.UserId)
+            return Result<PagedResponse<InvitationDto>>.Failure(WorkspaceErrors.AccessDenied);
+
         var invitations = await invitationRepo.FindAll(specification);
         var invitationsCount = await invitationRepo.CountAsync(countSpecification);
+
         var invitationDtos = mapper.Map<IEnumerable<InvitationDto>>(invitations);
         var pagedResponse = new PagedResponse<InvitationDto>(invitationDtos, queryFilter.PageNumber, queryFilter.PageSize, invitationsCount);
         return Result<PagedResponse<InvitationDto>>.Success(pagedResponse);
@@ -160,34 +169,6 @@ public class InvitationService(IUnitOfWork unitOfWork,
     {
         invitation.Status = status;
         invitationRepo.Update(invitation);
-    }
-    public async Task<Result<PagedResponse<InvitationDto>>> GetInvitationByStatusAsync(GetInvitationDto getInvitationDto, QueryFilter queryFilter, string userId)
-    {
-        var workspace = await workspaceRepo.GetByIdAsync(getInvitationDto.WorkspaceId);
-        if (workspace is null)
-            return Result<PagedResponse<InvitationDto>>.Failure(WorkspaceErrors.NotFound);
-        if (workspace.OwnerId != userId)
-            return Result<PagedResponse<InvitationDto>>.Failure(WorkspaceErrors.AccessDenied);
-
-        Enum.TryParse<InvitationStatusEnum>(getInvitationDto.Status, true, out var status);
-        ISpecification<Invitation> specification;
-        ISpecification<Invitation> countSpecification;
-        if (status == InvitationStatusEnum.Expired)
-        {
-            // has a custom specification to get the expired invitations
-            specification = new ExpiredInvitationSpecification(queryFilter);
-            countSpecification = new ExpiredInvitationCountSpecification();
-        }
-        else
-        {
-            specification = new InvitationByStatusSpecification(status, queryFilter);
-            countSpecification = new InvitationByStatusCountSpecification(status);
-        }
-        var invitations = await invitationRepo.FindAll(specification);
-        var totalRecords = await invitationRepo.CountAsync(countSpecification);
-        var invitationsDtos = mapper.Map<IEnumerable<InvitationDto>>(invitations);
-        var pagedResponse = new PagedResponse<InvitationDto>(invitationsDtos, queryFilter.PageNumber, queryFilter.PageSize, totalRecords);
-        return Result<PagedResponse<InvitationDto>>.Success(pagedResponse);
     }
     public async Task PeriodicUpdateOfExpiredInvitationsAsync()
     {
