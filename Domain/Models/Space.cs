@@ -13,7 +13,8 @@ public class Space
     // (fk) Workspace
     public int WorkspaceId { get; set; }
     public Workspace Workspace { get; set; } = default!;
-    /// Relationship: One-To-Many with (Groups, Invitations, UserSpace)    
+    /// Relationship: One-To-Many with (Quests, Groups, Invitations, UserSpace)    
+    public ICollection<Quest> Quests { get; set; } = [];
     public ICollection<Group> Groups { get; set; } = [];
     public ICollection<Invitation> Invitations { get; set; } = [];
     public ICollection<SpaceMember> SpaceMembers { get; set; } = [];

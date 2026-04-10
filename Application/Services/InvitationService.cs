@@ -9,20 +9,33 @@ using AutoMapper;
 using Domain.Contracts;
 using Domain.Models;
 using Domain.Settings;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Linq.Expressions;
 
 namespace Application.Services;
 
 public class InvitationService(IUnitOfWork unitOfWork,
                            IAccountService accountService,
                            IEmailService emailService,
-                           IWorkSpaceService workSpaceService,
                            IWorkSpaceMemberService workSpaceMemberService,
                            IOptions<UrlOptions> urlOptions,
-                           IMapper mapper) : IInvitationService
+                           IMapper mapper,
+                           ILogger<InvitationService> logger) : IInvitationService
 {
     private readonly UrlOptions urlOptions = urlOptions.Value;
+    private readonly IGenericRepository<Workspace> workspaceRepo = unitOfWork.Repository<Workspace>();
     private readonly IGenericRepository<Invitation> invitationRepo = unitOfWork.Repository<Invitation>();
+    public async Task<Result<PagedResponse<InvitationDto>>> GetAllInvitationsAsync(QueryFilter queryFilter, int workspaceId)
+    {
+        var specification = new InvitationByWorkspaceSpecification(queryFilter, workspaceId);
+        var countSpecification = new InvitationByWorkspaceCountSpecification(workspaceId);
+        var invitations = await invitationRepo.FindAll(specification);
+        var invitationsCount = await invitationRepo.CountAsync(countSpecification);
+        var invitationDtos = mapper.Map<IEnumerable<InvitationDto>>(invitations);
+        var pagedResponse = new PagedResponse<InvitationDto>(invitationDtos, queryFilter.PageNumber, queryFilter.PageSize, invitationsCount);
+        return Result<PagedResponse<InvitationDto>>.Success(pagedResponse);
+    }
     public async Task<Result<BaseToReturnDto>> SendInvitationAsync(SendInvitationDto sendInvitationDto, string senderId)
     {
         // check if the sender exists
@@ -30,7 +43,7 @@ public class InvitationService(IUnitOfWork unitOfWork,
         if (sender is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
         // check if the workspace exists
-        var workspace = await workSpaceService.GetWorkSpaceById(sendInvitationDto.WorkspaceId);
+        var workspace = await workspaceRepo.GetByIdAsync(sendInvitationDto.WorkspaceId);
         if (workspace is null)
             return Result<BaseToReturnDto>.Failure(WorkspaceErrors.NotFound);
         // if the sender has already sent an invitation to the same email and it's still pending
@@ -106,7 +119,7 @@ public class InvitationService(IUnitOfWork unitOfWork,
         if (user is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
         // check if workspace exists
-        var workspace = await workSpaceService.GetWorkSpaceById(invitation.WorkspaceId);
+        var workspace = await workspaceRepo.GetByIdAsync(invitation.WorkspaceId);
         if (workspace is null)
             return Result<BaseToReturnDto>.Failure(WorkspaceErrors.NotFound);
         // add the user to the workspace members
@@ -150,7 +163,7 @@ public class InvitationService(IUnitOfWork unitOfWork,
     }
     public async Task<Result<PagedResponse<InvitationDto>>> GetInvitationByStatusAsync(GetInvitationDto getInvitationDto, QueryFilter queryFilter, string userId)
     {
-        var workspace = await workSpaceService.GetWorkSpaceById(getInvitationDto.WorkspaceId);
+        var workspace = await workspaceRepo.GetByIdAsync(getInvitationDto.WorkspaceId);
         if (workspace is null)
             return Result<PagedResponse<InvitationDto>>.Failure(WorkspaceErrors.NotFound);
         if (workspace.OwnerId != userId)
@@ -158,23 +171,51 @@ public class InvitationService(IUnitOfWork unitOfWork,
 
         Enum.TryParse<InvitationStatusEnum>(getInvitationDto.Status, true, out var status);
         ISpecification<Invitation> specification;
+        ISpecification<Invitation> countSpecification;
         if (status == InvitationStatusEnum.Expired)
         {
             // has a custom specification to get the expired invitations
             specification = new ExpiredInvitationSpecification(queryFilter);
+            countSpecification = new ExpiredInvitationCountSpecification();
         }
         else
         {
             specification = new InvitationByStatusSpecification(status, queryFilter);
+            countSpecification = new InvitationByStatusCountSpecification(status);
         }
         var invitations = await invitationRepo.FindAll(specification);
-        // var totalRecords = invitations.Count(); 
-        // this will be incorrect because these are the invitations after pagination and we need the total count before pagination,
-        // to fix this I will create a new specification without pagination and get the count of it
-        // but before that I must go to feature/specification branch to add a CountAsync with ISpecification parameter to the generic repository
+        var totalRecords = await invitationRepo.CountAsync(countSpecification);
         var invitationsDtos = mapper.Map<IEnumerable<InvitationDto>>(invitations);
-        var pagedResponse = new PagedResponse<InvitationDto>(invitationsDtos, queryFilter.PageNumber, queryFilter.PageSize, totalRecords: 1); // to fix
+        var pagedResponse = new PagedResponse<InvitationDto>(invitationsDtos, queryFilter.PageNumber, queryFilter.PageSize, totalRecords);
         return Result<PagedResponse<InvitationDto>>.Success(pagedResponse);
+    }
+    public async Task PeriodicUpdateOfExpiredInvitationsAsync()
+    {
+        var specification = new InActiveInvitationSpecification();
+        await invitationRepo.BulkUpdateAsync(specification, inv => inv.SetProperty(x => x.Status, InvitationStatusEnum.Expired));
+    }
+    public async Task BulkDeleteInvitationsByCriteria(Expression<Func<Invitation, bool>> criteria)
+    {
+        if (criteria is null)
+        {
+            logger.LogError("BulkDeleteInvitationsByCriteria: criteria is null");
+            throw new ArgumentNullException(nameof(criteria));
+        }
+        if (criteria.Body is ConstantExpression constant && (bool)constant.Value! == true)
+        {
+            logger.LogError("BulkDeleteInvitationsByCriteria: criteria is too broad and may lead to deleting all invitations");
+            throw new Exception();
+        }
+        await invitationRepo.BulkDeleteAsync(criteria);
+    }
+    public async Task<Result<bool>> DeleteInvitationById(int invitationId)
+    {
+        var invitation = await invitationRepo.GetByIdAsync(invitationId);
+        if (invitation is null)
+            return Result<bool>.Failure(InvitationErrors.NotFound);
+        invitationRepo.Delete(invitation);
+        await unitOfWork.SaveAsync();
+        return Result<bool>.Success(true);
     }
     private async Task<Invitation?> GetInvitationByToken(string token)
     {
@@ -200,5 +241,6 @@ public class InvitationService(IUnitOfWork unitOfWork,
         await unitOfWork.SaveAsync();
         return invitation;
     }
+
 
 }
