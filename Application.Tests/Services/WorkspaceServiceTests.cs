@@ -442,6 +442,111 @@ public class WorkspaceServiceTests
 
     #endregion
 
+    #region UpdateWorkSpaceAsync Tests
+
+    [Fact]
+    public async Task UpdateWorkSpaceAsync_WhenUserIsOwner_UpdatesWorkspaceSuccessfully()
+    {
+        // Arrange
+        var workspaceId = 1;
+        var userId = "owner-id";
+        var updateDto = new UpdateWorkspaceDto { Name = "Updated Workspace", Avatar = "new-avatar.jpg" };
+        var workspace = CreateTestWorkspace(workspaceId, "Old Workspace", userId);
+
+        _workspaceRepositoryMock
+            .Setup(r => r.GetByIdAsync(workspaceId))
+            .ReturnsAsync(workspace);
+
+        _unitOfWorkMock
+            .Setup(u => u.SaveAsync())
+            .ReturnsAsync(1);
+
+        // Act
+        var result = await _sut.UpdateWorkSpaceAsync(workspaceId, updateDto, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().BeTrue();
+        workspace.Name.Should().Be(updateDto.Name);
+        workspace.Avatar.Should().Be(updateDto.Avatar);
+    }
+
+    [Fact]
+    public async Task UpdateWorkSpaceAsync_WhenWorkspaceNotFound_ReturnsNotFoundError()
+    {
+        // Arrange
+        var workspaceId = 999;
+        var userId = "owner-id";
+        var updateDto = new UpdateWorkspaceDto { Name = "Updated Workspace", Avatar = "new-avatar.jpg" };
+
+        _workspaceRepositoryMock
+            .Setup(r => r.GetByIdAsync(workspaceId))
+            .ReturnsAsync((Workspace?)null);
+
+        // Act
+        var result = await _sut.UpdateWorkSpaceAsync(workspaceId, updateDto, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList.Should().HaveCount(1);
+        result.ErrorsList.First().Code.Should().Be(WorkspaceErrors.NotFound.Code);
+    }
+
+    [Fact]
+    public async Task UpdateWorkSpaceAsync_WhenUserIsNotOwner_ReturnsAccessDeniedError()
+    {
+        // Arrange
+        var workspaceId = 1;
+        var userId = "unauthorized-user";
+        var ownerId = "owner-id";
+        var updateDto = new UpdateWorkspaceDto { Name = "Updated Workspace", Avatar = "new-avatar.jpg" };
+        var workspace = CreateTestWorkspace(workspaceId, "Old Workspace", ownerId);
+
+        _workspaceRepositoryMock
+            .Setup(r => r.GetByIdAsync(workspaceId))
+            .ReturnsAsync(workspace);
+
+        // Act
+        var result = await _sut.UpdateWorkSpaceAsync(workspaceId, updateDto, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList.Should().HaveCount(1);
+        result.ErrorsList.First().Code.Should().Be(WorkspaceErrors.AccessDenied.Code);
+    }
+
+    [Fact]
+    public async Task UpdateWorkSpaceAsync_WhenSaveFails_ReturnsUpdateFailedError()
+    {
+        // Arrange
+        var workspaceId = 1;
+        var userId = "owner-id";
+        var updateDto = new UpdateWorkspaceDto { Name = "Updated Workspace", Avatar = "new-avatar.jpg" };
+        var workspace = CreateTestWorkspace(workspaceId, "Old Workspace", userId);
+
+        _workspaceRepositoryMock
+            .Setup(r => r.GetByIdAsync(workspaceId))
+            .ReturnsAsync(workspace);
+
+        _unitOfWorkMock
+            .Setup(u => u.SaveAsync())
+            .ReturnsAsync(0);
+
+        // Act
+        var result = await _sut.UpdateWorkSpaceAsync(workspaceId, updateDto, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList.Should().HaveCount(1);
+        result.ErrorsList.First().Code.Should().Be(WorkspaceErrors.UpdateFailed.Code);
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private static Workspace CreateTestWorkspace(int id, string name, string ownerId)
