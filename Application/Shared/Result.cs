@@ -25,5 +25,12 @@ public class Result<T>
          => new Result<T>(errors);
     public TResult Map<TResult>(Func<T, TResult> onSuccess, Func<IEnumerable<Error>, TResult> onFailure)
      => IsSuccess ? onSuccess(Value!) : onFailure(ErrorsList!);
+    public async Task MapAsync(Func<T, Task> onSuccess, Func<IEnumerable<Error>, Task> onFailure)
+    {
+        if (IsSuccess)
+            await onSuccess(Value!);
+        else
+            await onFailure(ErrorsList!);
+    }
 
 }

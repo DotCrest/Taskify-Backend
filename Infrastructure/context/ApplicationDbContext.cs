@@ -11,6 +11,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Comment> Comments { get; set; }
     public DbSet<Invitation> Invitations { get; set; }
     public DbSet<Quest> Quests { get; set; }
+    public DbSet<UserQuest> UserQuests { get; set; }
     public DbSet<Workspace> Workspaces { get; set; }
     public DbSet<Space> Spaces { get; set; }
     public DbSet<Group> Groups { get; set; }
