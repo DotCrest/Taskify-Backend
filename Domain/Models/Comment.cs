@@ -5,7 +5,7 @@ public class Comment
     public int Id { get; set; }
     public string Content { get; set; } = default!;
     public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     // Relations: One to Many => relationships with (User, Quest)
     public string UserId { get; set; } = default!;

@@ -2,6 +2,8 @@
 using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Errors;
+using Application.Shared.Pagination;
+using Application.Specifications.CommentSpecification;
 using AutoMapper;
 using Domain.Contracts;
 using Domain.Models;
@@ -27,11 +29,18 @@ public class CommentService(IUnitOfWork unitOfWork,
         var commentDto = mapper.Map<CommentDto>(comment);
         return Result<CommentDto>.Success(commentDto);
     }
-    public async Task<Result<IEnumerable<CommentDto>>> GetCommentsByPlanIdAsync(int questId)
+    public async Task<Result<PagedResponse<CommentDto>>> GetCommentsByQuestIdAsync(int questId, QueryFilter queryFilter)
     {
-        var comments = await _commentRepository.FindAll(c => c.QuestId == questId);
+        var spec = new GetAllCommentSpecification(questId, queryFilter);
+        var countSpec = new CommentCountSpecification(questId);
+
+        var totalRecords = await _commentRepository.CountAsync(countSpec);
+        var comments = await _commentRepository.FindAll(spec);
+
         var commentDtos = mapper.Map<IEnumerable<CommentDto>>(comments);
-        return Result<IEnumerable<CommentDto>>.Success(commentDtos);
+        var pagedResponse = new PagedResponse<CommentDto>(commentDtos, queryFilter.PageNumber, queryFilter.PageSize, totalRecords);
+
+        return Result<PagedResponse<CommentDto>>.Success(pagedResponse);
     }
     public async Task<Result<CommentDto>> UpdateCommentAsync(UpdateCommentDto updateCommentDto)
     {
