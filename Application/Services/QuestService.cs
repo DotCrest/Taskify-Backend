@@ -21,7 +21,7 @@ public class QuestService(IUnitOfWork unitOfWork,
     private readonly IGenericRepository<Category> categoryRepo = unitOfWork.Repository<Category>();
 
 
-    public async Task<Result<PagedResponse<QuestToReturnDto>>> GetAllQuests(string userId, int spaceId, QueryFilter queryFilter)
+    public async Task<Result<PagedResponse<QuestToReturnDto>>> GetAllQuests(string userId, int spaceId, QuestCustomQueryFilter queryFilter)
     {
         var space = await spaceService.GetSpaceAsync(spaceId);
         if (!space.IsSuccess)

@@ -18,7 +18,7 @@ namespace Application.MappingProfiles
 
             CreateMap<UserToQuestDto, UserQuest>()
                 .ForMember(dest => dest.UserId,
-                opt => opt.MapFrom(src => src.UserId))
+                opt => opt.MapFrom(src => src.AssigneeId))
                 .ForMember(dest => dest.QuestId,
                 opt => opt.MapFrom(src => src.QuestId));
         }

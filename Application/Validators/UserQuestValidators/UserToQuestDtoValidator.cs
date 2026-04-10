@@ -7,7 +7,7 @@ public class UserToQuestDtoValidator : AbstractValidator<UserToQuestDto>
 {
     public UserToQuestDtoValidator()
     {
-        RuleFor(u => u.UserId)
+        RuleFor(u => u.AssigneeId)
             .NotEmpty().WithMessage("UserId is required.");
 
         RuleFor(u => u.QuestId)

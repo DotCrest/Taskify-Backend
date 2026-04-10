@@ -11,8 +11,10 @@ namespace WebApi.Controllers
 {
     [ApiController]
     [Route("api/[Controller]")]
-    public class QuestController(IValidator<QueryFilter> validator, IQuestService questService, IValidator<QuestToCreateDto> CreateQuestValidator
-        , IValidator<QuestToUpdateDto> updateQuestValidator) : BaseApiController
+    public class QuestController(IValidator<QuestCustomQueryFilter> QuestQueryFilterValidtor,
+                                 IValidator<QuestToCreateDto> CreateQuestValidator,
+                                 IValidator<QuestToUpdateDto> updateQuestValidator,
+                                 IQuestService questService) : BaseApiController
     {
         [HttpGet("space/{spaceid:int}")]
         [Authorize]
@@ -20,9 +22,9 @@ namespace WebApi.Controllers
         [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<PagedResponse<QuestToReturnDto>>> GetAllQuests([FromQuery] QueryFilter queryFilter, int spaceid)
+        public async Task<ActionResult<PagedResponse<QuestToReturnDto>>> GetAllQuests([FromQuery] QuestCustomQueryFilter queryFilter, int spaceid)
         {
-            var queryFilterValidation = await ExecuteWithValidation(validator, queryFilter);
+            var queryFilterValidation = await ExecuteWithValidation(QuestQueryFilterValidtor, queryFilter);
             if (!queryFilterValidation.IsSuccess)
                 return HandleFailure(queryFilterValidation.ErrorsList);
 
