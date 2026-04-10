@@ -18,12 +18,13 @@ namespace Infrastructure
                 (current, includeExpression)
                 => current.Include(includeExpression));
             }
-            if (specification.IsPaginated)
-                query = query.Skip(specification.Skip).Take(specification.Take);
             if (specification.SortExpressions.Any())
             {
                 query = query.OrderBy(string.Join(", ", specification.SortExpressions));
             }
+            if (specification.IsPaginated)
+                query = query.Skip(specification.Skip).Take(specification.Take);
+
             return query;
         }
     }
