@@ -3,6 +3,7 @@ using Application.ServiceAbstractions;
 using Application.Shared.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WebApi.ActionFilters;
 
 namespace WebApi.Controllers;
 
@@ -13,7 +14,7 @@ public class CommentController(ICommentService commentService) : BaseApiControll
 {
     [HttpGet("{questId}")]
     [ProducesResponseType(typeof(PagedResponse<CommentDto>), StatusCodes.Status200OK)]
-
+    [Cache]
     // TODO: add caching to this endpoint
     public async Task<ActionResult<PagedResponse<CommentDto>>> GetComments(int questId, [FromQuery] QueryFilter queryFilter)
     {
