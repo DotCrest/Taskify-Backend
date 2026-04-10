@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 using System.Text;
 using System.Text.Json.Serialization;
 using WebApi.Hubs;
@@ -75,6 +76,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<ISpaceService, SpaceService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<ICacheService, CacheService>();
 builder.Services.Configure<UrlOptions>(builder.Configuration.GetSection("Urls"));
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("email-config"));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
@@ -162,14 +164,19 @@ builder.Services.AddSignalR(opt =>
     opt.AddFilter<CommentHubFilter>();
 });
 
+builder.Services.AddSingleton<IConnectionMultiplexer>((_) =>
+{
+    return ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("RedisConnectionString")!);
+});
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<ApplicationDbContext>();
     var userManager = services.GetRequiredService<UserManager<User>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-    var seeder = new DataSeeder(context, userManager);
+    var seeder = new DataSeeder(context, userManager, roleManager);
     await seeder.SeedAllAsync();
 }
 

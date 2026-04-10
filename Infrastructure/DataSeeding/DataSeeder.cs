@@ -12,11 +12,13 @@ public class DataSeeder
 {
     private readonly ApplicationDbContext _context;
     private readonly UserManager<User> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
 
-    public DataSeeder(ApplicationDbContext context, UserManager<User> userManager)
+    public DataSeeder(ApplicationDbContext context, UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
     {
         _context = context;
         _userManager = userManager;
+        _roleManager = roleManager;
     }
 
     /// <summary>
@@ -27,7 +29,9 @@ public class DataSeeder
         try
         {
             // Order matters! Seed in dependency order:
+            // 0. Roles (foundational for user management)
             // 1. Users (base entity)
+            // 1.5. User Roles (assign users to roles)
             // 2. Workspaces (depends on User)
             // 3. Spaces (depends on Workspace)
             // 4. Categories (depends on Workspace)
@@ -43,9 +47,17 @@ public class DataSeeder
 
             Console.WriteLine("Starting data seeding...");
 
+            var roleSeeder = new RoleSeeder(_roleManager);
+            Console.WriteLine("Seeding roles...");
+            await roleSeeder.SeedAsync();
+
             var userSeeder = new UserSeeder(_userManager);
             Console.WriteLine("Seeding users...");
             await userSeeder.SeedAsync();
+
+            var userRoleSeeder = new UserRoleSeeder(_userManager);
+            Console.WriteLine("Seeding user roles...");
+            await userRoleSeeder.SeedAsync();
 
             var workspaceSeeder = new WorkspaceSeeder(_context);
             Console.WriteLine("Seeding workspaces...");
@@ -114,9 +126,17 @@ public class DataSeeder
         {
             switch (entityType.ToLower())
             {
+                case "role":
+                    var roleSeeder = new RoleSeeder(_roleManager);
+                    await roleSeeder.SeedAsync();
+                    break;
                 case "user":
                     var userSeeder = new UserSeeder(_userManager);
                     await userSeeder.SeedAsync();
+                    break;
+                case "userrole":
+                    var userRoleSeeder = new UserRoleSeeder(_userManager);
+                    await userRoleSeeder.SeedAsync();
                     break;
                 case "workspace":
                     var workspaceSeeder = new WorkspaceSeeder(_context);
