@@ -482,3 +482,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+/Infrastructure/DataSeeding
+/WebApi/wwwroot
+/CommentHub_DOCUMENTATION.md
+/WebApi/wwwroot/comment-hub-test.html
+*.md
