@@ -1,4 +1,5 @@
-﻿using Application.MappingProfiles;
+﻿using Application.Dtos.WorkspaceDtos;
+using Application.MappingProfiles;
 using Application.ServiceAbstractions;
 using Application.Services;
 using Application.Shared.Errors;
@@ -282,6 +283,161 @@ public class WorkspaceServiceTests
         result.IsSuccess.Should().BeFalse();
         result.ErrorsList.Should().HaveCount(1);
         result.ErrorsList.First().Code.Should().Be(WorkspaceErrors.AccessDenied.Code);
+    }
+
+    #endregion
+
+    #region CreateWorkspaceAsync Tests
+
+    [Fact]
+    public async Task CreateWorkspaceAsync_WithValidInput_CreatesWorkspaceSuccessfully()
+    {
+        // Arrange
+        var userId = "test-user";
+        var createDto = new CreateWorkspaceDto { Name = "New Workspace", Avatar = "avatar.jpg" };
+        var createdWorkspace = new Workspace
+        {
+            Id = 1,
+            Name = createDto.Name,
+            Avatar = createDto.Avatar,
+            OwnerId = userId,
+            CreatedAt = DateTime.UtcNow,
+            WorkspaceMembers = new List<WorkspaceMember>()
+        };
+
+        _unitOfWorkMock
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>()))
+            .Returns(async (Func<Task> action) => await action());
+
+        _workspaceRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Workspace>()))
+            .Returns(Task.CompletedTask);
+
+        _unitOfWorkMock
+            .Setup(u => u.SaveAsync())
+            .ReturnsAsync(1);
+
+        _workspaceMemberServiceMock
+            .Setup(s => s.AddWorkSpaceMemberAsync(It.IsAny<WorkspaceMember>()))
+            .Returns(Task.CompletedTask);
+
+        _workspaceRepositoryMock
+            .Setup(r => r.Find(It.IsAny<ISpecification<Workspace>>()))
+            .ReturnsAsync(createdWorkspace);
+
+        // Act
+        var result = await _sut.CreateWorkspaceAsync(createDto, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value.Name.Should().Be(createDto.Name);
+        result.Value.Avatar.Should().Be(createDto.Avatar);
+    }
+
+    [Fact]
+    public async Task CreateWorkspaceAsync_WhenTransactionFails_ReturnsCreateFailedError()
+    {
+        // Arrange
+        var userId = "test-user";
+        var createDto = new CreateWorkspaceDto { Name = "New Workspace", Avatar = "avatar.jpg" };
+
+        _unitOfWorkMock
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>()))
+            .ThrowsAsync(new Exception("Transaction failed"));
+
+        // Act
+        var result = await _sut.CreateWorkspaceAsync(createDto, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList.Should().HaveCount(1);
+        result.ErrorsList.First().Code.Should().Be(WorkspaceErrors.CreatedFailed.Code);
+    }
+
+    [Fact]
+    public async Task CreateWorkspaceAsync_WhenWorkspaceNotFoundAfterCreation_ReturnsCreateFailedError()
+    {
+        // Arrange
+        var userId = "test-user";
+        var createDto = new CreateWorkspaceDto { Name = "New Workspace", Avatar = "avatar.jpg" };
+
+        _unitOfWorkMock
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>()))
+            .Returns(async (Func<Task> action) => await action());
+
+        _workspaceRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Workspace>()))
+            .Returns(Task.CompletedTask);
+
+        _unitOfWorkMock
+            .Setup(u => u.SaveAsync())
+            .ReturnsAsync(1);
+
+        _workspaceMemberServiceMock
+            .Setup(s => s.AddWorkSpaceMemberAsync(It.IsAny<WorkspaceMember>()))
+            .Returns(Task.CompletedTask);
+
+        _workspaceRepositoryMock
+            .Setup(r => r.Find(It.IsAny<ISpecification<Workspace>>()))
+            .ReturnsAsync((Workspace?)null);
+
+        // Act
+        var result = await _sut.CreateWorkspaceAsync(createDto, userId);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList.Should().HaveCount(1);
+        result.ErrorsList.First().Code.Should().Be(WorkspaceErrors.CreatedFailed.Code);
+    }
+
+    [Fact]
+    public async Task CreateWorkspaceAsync_CreatesWorkspaceMemberAsAdmin()
+    {
+        // Arrange
+        var userId = "test-user";
+        var createDto = new CreateWorkspaceDto { Name = "New Workspace", Avatar = "avatar.jpg" };
+        var createdWorkspace = new Workspace
+        {
+            Id = 1,
+            Name = createDto.Name,
+            Avatar = createDto.Avatar,
+            OwnerId = userId,
+            CreatedAt = DateTime.UtcNow,
+            WorkspaceMembers = new List<WorkspaceMember>()
+        };
+
+        _unitOfWorkMock
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>()))
+            .Returns(async (Func<Task> action) => await action());
+
+        _workspaceRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Workspace>()))
+            .Returns(Task.CompletedTask);
+
+        _unitOfWorkMock
+            .Setup(u => u.SaveAsync())
+            .ReturnsAsync(1);
+
+        _workspaceMemberServiceMock
+            .Setup(s => s.AddWorkSpaceMemberAsync(It.IsAny<WorkspaceMember>()))
+            .Returns(Task.CompletedTask);
+
+        _workspaceRepositoryMock
+            .Setup(r => r.Find(It.IsAny<ISpecification<Workspace>>()))
+            .ReturnsAsync(createdWorkspace);
+
+        // Act
+        await _sut.CreateWorkspaceAsync(createDto, userId);
+
+        // Assert
+        _workspaceMemberServiceMock.Verify(
+            s => s.AddWorkSpaceMemberAsync(It.Is<WorkspaceMember>(m =>
+                m.UserId == userId && m.Role == Role.Admin)),
+            Times.Once);
     }
 
     #endregion
