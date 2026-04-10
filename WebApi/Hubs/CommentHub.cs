@@ -82,22 +82,22 @@ public class CommentHub(ILogger<CommentHub> logger,
     public async Task EditComment(UpdateCommentDto updateCommentDto)
     {
         var userId = Context.Items["userId"] as string;
-        var questId = Context.Items["questId"] as int?;
+        var questId = Context.Items["questId"] as string;
         updateCommentDto.UserId = userId;
 
         var result = await commentService.UpdateCommentAsync(updateCommentDto);
         await result.MapAsync(
-            onSuccess: res => Clients.Group(questId.ToString()!).ReceiveEditedComment(res),
+            onSuccess: res => Clients.Group(questId!).ReceiveEditedComment(res),
             onFailure: err => Clients.Caller.ReceiveErrors(err)
         );
     }
     public async Task DeleteComment(int commentId)
     {
         var userId = Context.Items["userId"] as string;
-        var questId = Context.Items["questId"] as int?;
+        var questId = Context.Items["questId"] as string;
         var result = await commentService.DeleteCommentAsync(commentId, userId!);
         await result.MapAsync(
-            onSuccess: _ => Clients.Group(questId.ToString()!).ReceiveDeletedComment(commentId, "This comment has been deleted."),
+            onSuccess: _ => Clients.Group(questId!).ReceiveDeletedComment(commentId, "This comment has been deleted."),
             onFailure: err => Clients.Caller.ReceiveErrors(err)
         );
     }
