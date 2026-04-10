@@ -9,8 +9,9 @@ public class CommentProfile : Profile
     public CommentProfile()
     {
         CreateMap<AddCommentDto, Comment>()
-           .ForMember(des => des.Id, opt => opt.MapFrom(_ => Guid.NewGuid().ToString()))
-           .ForMember(des => des.CreatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow));
+            .ForMember(des => des.Content, opt => opt.MapFrom(src => src.UserComment))
+
+            .ForMember(des => des.CreatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow));
 
         CreateMap<Comment, CommentDto>();
 

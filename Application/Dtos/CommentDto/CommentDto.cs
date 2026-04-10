@@ -2,7 +2,7 @@
 
 public class CommentDto
 {
-    public string Id { get; set; } = default!;
+    public int Id { get; set; } = default!;
     public string Content { get; set; } = default!;
     public string UserId { get; set; } = default!;
     public int QuestId { get; set; }
