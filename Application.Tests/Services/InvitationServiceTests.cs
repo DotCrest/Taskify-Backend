@@ -151,6 +151,7 @@ public class InvitationServiceTests
             .Be(WorkspaceErrors.AccessDenied);
     }
     #endregion
+    #region SendInvitationAsync
     [Fact]
     public async Task SendInvitationAsync_WithValidInput_SendEmailAndReturnBaseToReturn()
     {
@@ -179,5 +180,33 @@ public class InvitationServiceTests
         result.Value.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue();
     }
+    [Fact]
+    public async Task SendInvitationAsync_WhenUserIsNotFound_ReturnNotFound()
+    {
+        // arrange
+        var sendInvitationDto = InvitationFaker.GetFakeSendInvitationDto().Generate();
+        var userId = Guid.NewGuid().ToString();
+
+        _accountServiceMock.Setup(a => a.GetUserByIdAsync(It.IsAny<string>())).ReturnsAsync((User?)null);
+        // act
+        var result = await _sut.SendInvitationAsync(sendInvitationDto, userId);
+
+        // assert
+        _accountServiceMock.Verify(a => a.GetUserByIdAsync(It.IsAny<string>()), Times.Once);
+        _workspaceRepositoryMock.Verify(w => w.GetByIdAsync(It.IsAny<int>()), Times.Never);
+        _invitationRepositoryMock.Verify(i => i.Find(It.IsAny<ISpecification<Invitation>>()), Times.Never);
+        _emailServiceMock.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+
+        result.Should().NotBeNull();
+        result.Value.Should().BeNull();
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(AuthErrors.UserNotFound);
+    }
+
+    #endregion
 
 }
