@@ -341,4 +341,28 @@ public class InvitationServiceTests
             .Be(InvitationErrors.AlreadyAccepted);
     }
     #endregion
+
+    #region ValidateInvitationAsync
+    [Fact]
+    public async Task ValidateInvitationAsync_WithValidTokenWhenUserIsRegistered_ReturnInviteValidationDto()
+    {
+        // arrange
+        var invitation = InvitationFaker.GetFakeInvitation(index: 0, seed: 4).Generate();
+        invitation.Workspace = new Workspace { Id = invitation.WorkspaceId, Name = "Test Workspace" };
+        var user = new User { Id = Guid.NewGuid().ToString(), Name = "John Doe", Email = invitation.ReceiverEmail };
+
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync(invitation);
+        _accountServiceMock.Setup(a => a.GetUserByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
+        // act
+        var result = await _sut.ValidateInvitationAsync(invitation.Token);
+        // assert
+        _invitationRepositoryMock.Verify(i => i.Find(It.IsAny<ISpecification<Invitation>>()), Times.Once);
+        _accountServiceMock.Verify(a => a.GetUserByEmailAsync(It.IsAny<string>()), Times.Once);
+
+        result.Value.Should().NotBeNull();
+        result.Value.IsUserRegistered.Should().BeTrue();
+        result.Value.ReceiverEmail.Should().Be(invitation.ReceiverEmail);
+    }
+    #endregion
+
 }
