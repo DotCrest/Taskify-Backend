@@ -1,6 +1,7 @@
 ﻿using Application.MappingProfiles;
 using Application.ServiceAbstractions;
 using Application.Services;
+using Application.Shared.Errors;
 using Application.Tests.Fakers;
 using AutoMapper;
 using Domain.Contracts;
@@ -106,5 +107,27 @@ public class InvitationServiceTests
                 ));
         }
     }
+
+    [Fact]
+    public async Task GetAllInvitationsAsync_WithInValidWorkspaceId_ReturnsNotFound()
+    {
+        // arrange
+        var fakeQueryFilter = InvitationFaker.GetFakeQueryFilter().Generate();
+        var fakeGetInvitationDtos = InvitationFaker.GetFakeGetInvitationDto(2).Generate();
+
+        _workspaceRepositoryMock.Setup(w => w.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((Workspace)null);
+        // act
+        var result = await _sut.GetAllInvitationsAsync(fakeQueryFilter, fakeGetInvitationDtos);
+        // assert
+        result.Should().NotBeNull();
+        result!.Value.Should().BeNull();
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(WorkspaceErrors.NotFound);
+    }
+
     #endregion
 }
