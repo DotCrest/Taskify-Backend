@@ -320,5 +320,25 @@ public class InvitationServiceTests
             .Should()
             .Be(InvitationErrors.Expired);
     }
+    [Fact]
+    public async Task GetValidInvitationAsync_WithAlreadyAcceptedInvitation_ReturnsAlreadyAccepted()
+    {
+        // arrange
+        var acceptedInvitation = InvitationFaker.GetFakeInvitation(index: 1, seed: 2) // index 1 will generate an accepted invitation as per the rules defined in the faker class
+            .Generate();
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync(acceptedInvitation);
+        // act
+        var result = await _sut.GetValidInvitationAsync(acceptedInvitation.Token);
+        // assert
+        _invitationRepositoryMock.Verify(i => i.Find(It.IsAny<ISpecification<Invitation>>()), Times.Once);
+        result.Should().NotBeNull();
+        result.Value.Should().BeNull();
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(InvitationErrors.AlreadyAccepted);
+    }
     #endregion
 }
