@@ -448,6 +448,29 @@ public class InvitationServiceTests
             .Should()
             .Be(InvitationErrors.NotFound);
     }
+    [Fact]
+    public async Task AcceptInvitationAsync_WhenUserNotFound_ReturnUserNotFound()
+    {
+        // arrange
+        var invitation = InvitationFaker.GetFakeInvitation(index: 0, seed: 2).Generate();
+
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync(invitation);
+        _accountServiceMock.Setup(a => a.GetUserByEmailAsync(It.IsAny<string>())).ReturnsAsync((User?)null);
+        // act
+        var result = await _sut.AcceptInvitationAsync(invitation.Token);
+        // assert
+        _workSpaceMemberServiceMock.Verify(w => w.AddWorkSpaceMemberAsync(It.IsAny<WorkspaceMember>()), Times.Never);
+        _invitationRepositoryMock.Verify(i => i.Update(It.IsAny<Invitation>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveAsync(), Times.Never);
+
+        result.Value.Should().BeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList.Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(AuthErrors.UserNotFound);
+    }
     #endregion
 }
 
