@@ -282,5 +282,23 @@ public class InvitationServiceTests
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().Be(invitation);
     }
+    [Fact]
+    public async Task GetValidInvitationAsync_WithInvalidToken_ReturnsNotFound()
+    {
+        // arrange
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync((Invitation?)null);
+        // act
+        var result = await _sut.GetValidInvitationAsync("invalid-token");
+        // assert
+        _invitationRepositoryMock.Verify(i => i.Find(It.IsAny<ISpecification<Invitation>>()), Times.Once);
+        result.Should().NotBeNull();
+        result.Value.Should().BeNull();
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(InvitationErrors.NotFound);
+    }
     #endregion
 }
