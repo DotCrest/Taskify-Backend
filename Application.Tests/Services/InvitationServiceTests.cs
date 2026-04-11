@@ -402,5 +402,32 @@ public class InvitationServiceTests
             .Be(InvitationErrors.NotFound);
     }
     #endregion
+
+    #region AcceptInvitationAsync
+    [Fact]
+    public async Task AcceptInvitationAsync_WithValidInput_ReturnsTrue()
+    {
+        // arrange
+        var invitation = InvitationFaker.GetFakeInvitation(index: 0, seed: 4).Generate();
+        var user = new User { Id = Guid.NewGuid().ToString(), Name = "John Doe", Email = invitation.ReceiverEmail };
+        var workspace = new Workspace { Id = invitation.WorkspaceId, Name = "Test Workspace" };
+
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync(invitation);
+        _accountServiceMock.Setup(a => a.GetUserByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
+        _workspaceRepositoryMock.Setup(w => w.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(workspace);
+        _unitOfWorkMock
+            .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<Task>>()))
+            .Returns(async (Func<Task> action) => await action());
+        // act
+        var result = await _sut.AcceptInvitationAsync(invitation.Token);
+        // assert
+        _workSpaceMemberServiceMock.Verify(w => w.AddWorkSpaceMemberAsync(It.IsAny<WorkspaceMember>()), Times.Once);
+        _invitationRepositoryMock.Verify(i => i.Update(It.Is<Invitation>(i => i.Id == invitation.Id && i.Status == InvitationStatusEnum.Accepted)), Times.Once);
+        _unitOfWorkMock.Verify(u => u.SaveAsync(), Times.Once);
+
+        result.Should().NotBeNull();
+        result.Value!.IsSuccess.Should().BeTrue();
+    }
+    #endregion
 }
 
