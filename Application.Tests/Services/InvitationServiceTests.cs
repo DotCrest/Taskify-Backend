@@ -382,6 +382,25 @@ public class InvitationServiceTests
         result.Value.IsUserRegistered.Should().BeFalse();
         result.Value.ReceiverEmail.Should().Be(invitation.ReceiverEmail);
     }
+    [Fact]
+    public async Task ValidateInvitationAsync_WithInvalidToken_ReturnNotFound()
+    {
+        // arrange
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync((Invitation?)null);
+        // act
+        var result = await _sut.ValidateInvitationAsync("invalid-token");
+        // assert
+        _invitationRepositoryMock.Verify(i => i.Find(It.IsAny<ISpecification<Invitation>>()), Times.Once);
+        _accountServiceMock.Verify(a => a.GetUserByEmailAsync(It.IsAny<string>()), Times.Never);
+        result.Should().NotBeNull();
+        result.Value.Should().BeNull();
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(InvitationErrors.NotFound);
+    }
     #endregion
-
 }
+
