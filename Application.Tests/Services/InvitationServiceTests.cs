@@ -151,6 +151,7 @@ public class InvitationServiceTests
             .Be(WorkspaceErrors.AccessDenied);
     }
     #endregion
+
     #region SendInvitationAsync
     [Fact]
     public async Task SendInvitationAsync_WithValidInput_SendEmailAndReturnBaseToReturn()
@@ -264,4 +265,22 @@ public class InvitationServiceTests
     }
     #endregion
 
+    #region GetValidInvitationAsync
+    [Fact]
+    public async Task GetValidInvitationAsync_WithValidToken_ReturnsInvitation()
+    {
+        // arrange
+        var invitation = InvitationFaker.GetFakeInvitation(index: 0, seed: 4).Generate();
+
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync(invitation);
+        // act
+        var result = await _sut.GetValidInvitationAsync(invitation.Token);
+        // assert
+        _invitationRepositoryMock.Verify(i => i.Find(It.IsAny<ISpecification<Invitation>>()), Times.Once);
+
+        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(invitation);
+    }
+    #endregion
 }
