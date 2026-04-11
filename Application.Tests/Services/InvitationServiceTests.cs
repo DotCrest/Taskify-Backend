@@ -300,5 +300,25 @@ public class InvitationServiceTests
             .Should()
             .Be(InvitationErrors.NotFound);
     }
+    [Fact]
+    public async Task GetValidInvitationAsync_WithExpiredInvitation_ReturnsExpired()
+    {
+        // arrange
+        var expiredInvitation = InvitationFaker.GetFakeInvitation(index: 0, seed: 3).Generate(); // seed 3 generates past date => expired invitation
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync(expiredInvitation);
+        // act
+        var result = await _sut.GetValidInvitationAsync(expiredInvitation.Token);
+        // assert
+        _invitationRepositoryMock.Verify(i => i.Find(It.IsAny<ISpecification<Invitation>>()), Times.Once);
+
+        result.Should().NotBeNull();
+        result.Value.Should().BeNull();
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(InvitationErrors.Expired);
+    }
     #endregion
 }
