@@ -56,7 +56,7 @@ public class InvitationService(IUnitOfWork unitOfWork,
         if (workspace is null)
             return Result<BaseToReturnDto>.Failure(WorkspaceErrors.NotFound);
         // if the sender has already sent an invitation to the same email and it's still pending
-        var specification = new InvitationByReceiverSpecification(sendInvitationDto.ReceiverEmail, sendInvitationDto.WorkspaceId, InvitationStatusEnum.Pending);
+        var specification = new InvitationByReceiverSpecification(sendInvitationDto.ReceiverEmail, sendInvitationDto.WorkspaceId);
         var existingInvitation = await invitationRepo.Find(specification);
         if (existingInvitation is not null)
             return Result<BaseToReturnDto>.Failure(InvitationErrors.AlreadySent);
