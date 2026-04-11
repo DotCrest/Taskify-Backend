@@ -1,10 +1,12 @@
 ﻿using Application.MappingProfiles;
 using Application.ServiceAbstractions;
 using Application.Services;
+using Application.Tests.Fakers;
 using AutoMapper;
 using Domain.Contracts;
 using Domain.Models;
 using Domain.Settings;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -63,4 +65,46 @@ public class InvitationServiceTests
             NullLogger<InvitationService>.Instance
         );
     }
+    #region GetAllInvitationsAsync
+    // Read the summary Tag for `GetFakeGetInvitationDto` & `GetFakeInvitation` in the InvitationFaker class to understand why we are using different seeds for the test cases
+    [Theory]
+    [InlineData(0, 2)]
+    [InlineData(2, 6)]
+    [InlineData(3, 7)]
+    public async Task GetAllInvitationsAsync_WithValidInput_Returns_PagedResponseWithSpecificStatus(int index, int seed)
+    {
+        // arrange
+        var fakeQueryFilter = InvitationFaker.GetFakeQueryFilter().Generate();
+        var fakeGetInvitationDtos = InvitationFaker.GetFakeGetInvitationDto(index, seed).Generate();
+        var fakeInvitations = InvitationFaker.GetFakeInvitation(index, seed)
+            .RuleFor(i => i.WorkspaceId, f => fakeGetInvitationDtos.WorkspaceId)
+            .RuleFor(i => i.SenderId, f => fakeGetInvitationDtos.UserId)
+            .Generate(5);
+
+        var workspace = new Workspace { Id = fakeInvitations[0].WorkspaceId, OwnerId = fakeGetInvitationDtos.UserId! };
+
+        _workspaceRepositoryMock.Setup(w => w.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(workspace);
+        _invitationRepositoryMock.Setup(i => i.FindAll(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync(fakeInvitations);
+        _invitationRepositoryMock.Setup(i => i.CountAsync(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync(5);
+        // act
+        var result = await _sut.GetAllInvitationsAsync(fakeQueryFilter, fakeGetInvitationDtos);
+        // assert
+
+        _workspaceRepositoryMock.Verify(w => w.GetByIdAsync(It.IsAny<int>()), Times.Once);
+        _invitationRepositoryMock.Verify(i => i.FindAll(It.IsAny<ISpecification<Invitation>>()), Times.Once);
+
+        result.Should().NotBeNull();
+        result!.Value!.Data.Should().NotBeNull();
+        result.Value.TotalRecords.Should().Be(5);
+        if (seed % 2 == 0) // if the seed is even, the status will be the same as the one in the fakeGetInvitationDtos
+        {
+            result.Value.Data.Should().AllSatisfy(invitation =>
+                invitation.Status
+                .Should()
+                .Be(
+                    Enum.Parse<InvitationStatusEnum>(fakeGetInvitationDtos.Status!, true)
+                ));
+        }
+    }
+    #endregion
 }
