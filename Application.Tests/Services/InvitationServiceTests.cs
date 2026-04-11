@@ -233,6 +233,35 @@ public class InvitationServiceTests
             .Should()
             .Be(WorkspaceErrors.NotFound);
     }
+    [Fact]
+    public async Task SendInvitationAsync_WhenInvitationAlreadySent_ReturnAlreadySent()
+    {
+        // arrange
+        var sendInvitationDto = InvitationFaker.GetFakeSendInvitationDto().Generate();
+        var user = new User { Id = Guid.NewGuid().ToString(), Name = "John Doe" };
+        var workspace = new Workspace { Id = sendInvitationDto.WorkspaceId, Name = "Test Workspace", OwnerId = user.Id };
+        var existingInvitation = new Invitation { Id = 1, ReceiverEmail = sendInvitationDto.ReceiverEmail, WorkspaceId = sendInvitationDto.WorkspaceId };
+
+        _accountServiceMock.Setup(a => a.GetUserByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
+        _workspaceRepositoryMock.Setup(w => w.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(workspace);
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync(existingInvitation);
+        // act
+        var result = await _sut.SendInvitationAsync(sendInvitationDto, user.Id);
+        // assert
+        _accountServiceMock.Verify(a => a.GetUserByIdAsync(It.IsAny<string>()), Times.Once);
+        _workspaceRepositoryMock.Verify(w => w.GetByIdAsync(It.IsAny<int>()), Times.Once);
+        _invitationRepositoryMock.Verify(i => i.Find(It.IsAny<ISpecification<Invitation>>()), Times.Once);
+        _emailServiceMock.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+
+        result.Should().NotBeNull();
+        result.Value.Should().BeNull();
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(InvitationErrors.AlreadySent);
+    }
     #endregion
 
 }
