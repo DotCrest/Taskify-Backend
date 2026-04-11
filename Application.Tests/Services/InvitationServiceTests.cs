@@ -363,6 +363,25 @@ public class InvitationServiceTests
         result.Value.IsUserRegistered.Should().BeTrue();
         result.Value.ReceiverEmail.Should().Be(invitation.ReceiverEmail);
     }
+    [Fact]
+    public async Task ValidateInvitationAsync_WithValidTokenWhenUserIsNotRegistered_ReturnInviteValidationDtoWithIsRegisteredEqualFalse()
+    {
+        // arrange
+        var invitation = InvitationFaker.GetFakeInvitation(index: 0, seed: 4).Generate();
+        invitation.Workspace = new Workspace { Id = invitation.WorkspaceId, Name = "Test Workspace" };
+
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync(invitation);
+        _accountServiceMock.Setup(a => a.GetUserByEmailAsync(It.IsAny<string>())).ReturnsAsync((User?)null);
+        // act
+        var result = await _sut.ValidateInvitationAsync(invitation.Token);
+        // assert
+        _invitationRepositoryMock.Verify(i => i.Find(It.IsAny<ISpecification<Invitation>>()), Times.Once);
+        _accountServiceMock.Verify(a => a.GetUserByEmailAsync(It.IsAny<string>()), Times.Once);
+
+        result.Value.Should().NotBeNull();
+        result.Value.IsUserRegistered.Should().BeFalse();
+        result.Value.ReceiverEmail.Should().Be(invitation.ReceiverEmail);
+    }
     #endregion
 
 }
