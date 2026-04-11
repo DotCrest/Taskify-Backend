@@ -129,5 +129,26 @@ public class InvitationServiceTests
             .Be(WorkspaceErrors.NotFound);
     }
 
+    [Fact]
+    public async Task GetAllInvitationsAsync_WhenUserIsNotTheOwner_ReturnsAccessDenied()
+    {
+        // arrange
+        var fakeQueryFilter = InvitationFaker.GetFakeQueryFilter().Generate();
+        var fakeGetInvitationDtos = InvitationFaker.GetFakeGetInvitationDto(2).Generate();
+        var workspace = new Workspace { Id = fakeGetInvitationDtos.WorkspaceId, OwnerId = fakeGetInvitationDtos.UserId! + 1 };
+
+        _workspaceRepositoryMock.Setup(w => w.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(workspace);
+        // act
+        var result = await _sut.GetAllInvitationsAsync(fakeQueryFilter, fakeGetInvitationDtos);
+        // assert
+        result.Should().NotBeNull();
+        result!.Value.Should().BeNull();
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(WorkspaceErrors.AccessDenied);
+    }
     #endregion
 }
