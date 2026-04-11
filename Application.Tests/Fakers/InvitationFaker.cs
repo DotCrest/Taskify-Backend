@@ -46,4 +46,9 @@ internal class InvitationFaker
         .RuleFor(i => i.SenderId, f => f.Random.Guid().ToString())
         .RuleFor(i => i.WorkspaceId, f => f.Random.Int(1, 100));
 
+    internal static Faker<SendInvitationDto> GetFakeSendInvitationDto() => new Faker<SendInvitationDto>()
+        .RuleFor(i => i.ReceiverEmail, f => f.Internet.Email())
+        .RuleFor(i => i.ReceiverRole, f => f.PickRandom("Admin", "Member", "Viewer"))
+        .RuleFor(i => i.WorkspaceId, f => f.Random.Int(1, 100));
+
 }

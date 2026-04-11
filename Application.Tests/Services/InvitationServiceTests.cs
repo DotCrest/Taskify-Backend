@@ -151,4 +151,33 @@ public class InvitationServiceTests
             .Be(WorkspaceErrors.AccessDenied);
     }
     #endregion
+    [Fact]
+    public async Task SendInvitationAsync_WithValidInput_SendEmailAndReturnBaseToReturn()
+    {
+        // arrange
+        var sendInvitationDto = InvitationFaker.GetFakeSendInvitationDto().Generate();
+        var user = new User { Id = Guid.NewGuid().ToString(), Name = "John Doe" };
+        var workspace = new Workspace { Id = sendInvitationDto.WorkspaceId, Name = "Test Workspace", OwnerId = user.Id };
+
+        _accountServiceMock.Setup(a => a.GetUserByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
+        _workspaceRepositoryMock.Setup(w => w.GetByIdAsync(It.IsAny<int>())).ReturnsAsync(workspace);
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync((Invitation?)null);
+        // act
+        var result = await _sut.SendInvitationAsync(sendInvitationDto, user.Id);
+        // assert
+        _accountServiceMock.Verify(a => a.GetUserByIdAsync(It.IsAny<string>()), Times.Once);
+        _workspaceRepositoryMock.Verify(w => w.GetByIdAsync(It.IsAny<int>()), Times.Once);
+        _invitationRepositoryMock.Verify(i => i.Find(It.IsAny<ISpecification<Invitation>>()), Times.Once);
+        _emailServiceMock.Verify(e => e.SendEmailAsync(
+            It.Is<string>(email => email == sendInvitationDto.ReceiverEmail),
+            It.Is<string>(subject => subject.Contains("You have been invited to join a workspace!")),
+            It.Is<string>(body => body.Contains(workspace.Name))
+        ),
+        Times.Once);
+
+        result.Should().NotBeNull();
+        result.Value.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
+    }
+
 }
