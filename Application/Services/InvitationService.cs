@@ -63,7 +63,7 @@ public class InvitationService(IUnitOfWork unitOfWork,
         // create invitation
         var invitation = await CreateInvitation(sendInvitationDto, senderId);
         // send email to the receiver
-        var registerByInvitationUrl = $"{urlOptions.BaseUrl}/frontend-page?token={invitation.Token}";
+        var registerByInvitationUrl = $"{urlOptions.FrontendUrl}/frontend-page?token={invitation.Token}";
         var receiverName = sendInvitationDto.ReceiverEmail.Split('@')[0];
         var subject = "You have been invited to join a workspace!";
         var body = $@"
