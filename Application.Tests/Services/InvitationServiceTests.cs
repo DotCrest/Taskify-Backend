@@ -206,7 +206,33 @@ public class InvitationServiceTests
             .Should()
             .Be(AuthErrors.UserNotFound);
     }
+    [Fact]
+    public async Task SendInvitationAsync_WhenWorkspaceIsNotFound_ReturnNotFound()
+    {
+        // arrange
+        var sendInvitationDto = InvitationFaker.GetFakeSendInvitationDto().Generate();
+        var user = new User { Id = Guid.NewGuid().ToString(), Name = "John Doe" };
 
+        _accountServiceMock.Setup(a => a.GetUserByIdAsync(It.IsAny<string>())).ReturnsAsync(user);
+        _workspaceRepositoryMock.Setup(w => w.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((Workspace?)null);
+        // act
+        var result = await _sut.SendInvitationAsync(sendInvitationDto, user.Id);
+        // assert
+        _accountServiceMock.Verify(a => a.GetUserByIdAsync(It.IsAny<string>()), Times.Once);
+        _workspaceRepositoryMock.Verify(w => w.GetByIdAsync(It.IsAny<int>()), Times.Once);
+        _invitationRepositoryMock.Verify(i => i.Find(It.IsAny<ISpecification<Invitation>>()), Times.Never);
+        _emailServiceMock.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+
+        result.Should().NotBeNull();
+        result.Value.Should().BeNull();
+
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(WorkspaceErrors.NotFound);
+    }
     #endregion
 
 }
