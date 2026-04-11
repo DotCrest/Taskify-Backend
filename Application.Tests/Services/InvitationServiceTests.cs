@@ -428,6 +428,26 @@ public class InvitationServiceTests
         result.Should().NotBeNull();
         result.Value!.IsSuccess.Should().BeTrue();
     }
+    [Fact]
+    public async Task AcceptInvitationAsync_WithInvalidToken_ReturnNotFound()
+    {
+        // arrange 
+        _invitationRepositoryMock.Setup(i => i.Find(It.IsAny<ISpecification<Invitation>>())).ReturnsAsync((Invitation?)null);
+        // act
+        var result = await _sut.AcceptInvitationAsync("InvalidToken");
+        // assert
+        _workSpaceMemberServiceMock.Verify(w => w.AddWorkSpaceMemberAsync(It.IsAny<WorkspaceMember>()), Times.Never);
+        _invitationRepositoryMock.Verify(i => i.Update(It.IsAny<Invitation>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveAsync(), Times.Never);
+
+        result.Value.Should().BeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList.Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(InvitationErrors.NotFound);
+    }
     #endregion
 }
 
