@@ -19,4 +19,8 @@ public class WorkSpaceMemberService(IUnitOfWork unitOfWork) : IWorkSpaceMemberSe
         await workSpaceMemberRepository.AddAsync(workspaceMember);
     }
 
+    public Task<bool> IsUserInWorkSpaceAsync(int workspaceId, string userId)
+    {
+        return workSpaceMemberRepository.AnyAsync(wm => wm.WorkspaceId == workspaceId && wm.UserId == userId);
+    }
 }

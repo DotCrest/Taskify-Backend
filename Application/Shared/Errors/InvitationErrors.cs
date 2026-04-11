@@ -15,4 +15,6 @@ public class InvitationErrors
         new Error("Invitation.Token", "Invitation token is invalid");
     public static readonly Error AlreadyAccepted =
         new Error("Invitation.AlreadyAccepted", "Invitation has been already accepted");
+    public static readonly Error BulkDeleteFailure =
+        new Error("Invitation.BulkDeleteFailure", "Failed to bulk delete invitations with the given criteria");
 }

@@ -2,5 +2,5 @@
 
 public class UrlOptions
 {
-    public string BaseUrl { get; set; } = default!;
+    public string FrontendUrl { get; set; } = default!;
 }

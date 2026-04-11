@@ -2,6 +2,7 @@
 using Application.Dtos;
 using Application.Dtos.InvitationDtos;
 using Application.ServiceAbstractions;
+using Application.Shared.Pagination;
 using Domain.Constants;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
@@ -14,10 +15,33 @@ namespace WebApi.Controllers;
 [Route("api/[controller]")]
 
 public class InvitationController(IInvitationService invitationService,
-                                  IValidator<SendInvitationDto> sendInvitationValidator) : BaseApiController
+                                  IValidator<SendInvitationDto> sendInvitationValidator,
+                                  IValidator<GetInvitationDto> getInvitationValidator,
+                                  IValidator<QueryFilter> queryFilterValidator) : BaseApiController
 {
     [Authorize(Roles = Role.Admin)]
-    [HttpPost("send-invitation")]
+    [HttpGet("{WorkspaceId:int}")]
+    [ProducesResponseType(typeof(PagedResponse<InvitationDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResponse<InvitationDto>>> GetAllInvitations([FromQuery] QueryFilter queryFilter, GetInvitationDto getInvitationDto)
+    {
+        var queryFilterValidation = await ExecuteWithValidation(queryFilterValidator, queryFilter);
+        if (!queryFilterValidation.IsSuccess)
+            return HandleFailure(queryFilterValidation.ErrorsList);
+
+        var getInvitationValidation = await ExecuteWithValidation(getInvitationValidator, getInvitationDto);
+        if (!getInvitationValidation.IsSuccess)
+            return HandleFailure(getInvitationValidation.ErrorsList);
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        getInvitationDto.UserId = userId;
+
+        var result = await invitationService.GetAllInvitationsAsync(queryFilter, getInvitationDto);
+        return result.Map<ActionResult<PagedResponse<InvitationDto>>>(
+        onSuccess: res => Ok(res),
+        onFailure: err => HandleFailure(err));
+    }
+    [Authorize(Roles = Role.Admin)]
+    [HttpPost("send")]
     [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
@@ -35,7 +59,7 @@ public class InvitationController(IInvitationService invitationService,
             onFailure: err => HandleFailure(err)
         );
     }
-    [HttpGet("validate-invitation")]
+    [HttpGet("validate")]
     [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
@@ -47,7 +71,7 @@ public class InvitationController(IInvitationService invitationService,
             onFailure: err => HandleFailure(err)
         );
     }
-    [HttpPost("accept-invitation")]
+    [HttpPost("accept")]
     [ProducesResponseType(typeof(BaseToReturnDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
@@ -56,6 +80,20 @@ public class InvitationController(IInvitationService invitationService,
         var result = await invitationService.AcceptInvitationAsync(token);
         return result.Map<ActionResult<BaseToReturnDto>>(
             onSuccess: res => Ok(res),
+            onFailure: err => HandleFailure(err)
+        );
+    }
+
+    // TODO: Delete invitation by Id.
+    [HttpDelete("{invitationId}")]
+    [Authorize(Roles = Role.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> DeleteInvitation(int invitationId)
+    {
+        var result = await invitationService.DeleteInvitationById(invitationId);
+        return result.Map(
+            onSuccess: res => NoContent(),
             onFailure: err => HandleFailure(err)
         );
     }

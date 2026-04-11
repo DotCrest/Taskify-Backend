@@ -1,5 +1,6 @@
 ﻿using Domain.Contracts;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core;
 
 namespace Infrastructure
 {
@@ -17,12 +18,13 @@ namespace Infrastructure
                 (current, includeExpression)
                 => current.Include(includeExpression));
             }
-            if (specification.OrderBy != null)
-                query = query.OrderBy(specification.OrderBy);
-            if (specification.OrderByDescending != null)
-                query = query.OrderByDescending(specification.OrderByDescending);
+            if (specification.SortExpressions.Any())
+            {
+                query = query.OrderBy(string.Join(", ", specification.SortExpressions));
+            }
             if (specification.IsPaginated)
                 query = query.Skip(specification.Skip).Take(specification.Take);
+
             return query;
         }
     }
