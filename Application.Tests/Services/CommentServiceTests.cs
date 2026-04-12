@@ -207,5 +207,28 @@ public class CommentServiceTests
             .Should()
             .Be(CommentErrors.AccessDenied);
     }
+    [Fact]
+    public async Task UpdatecommentAsync_WhenEditTimeIsExceeded_ReturnEditTimeout()
+    {
+        // arrange
+        // different seeds here will create a comment with created time that exceed the allowed edit time
+        // and the other values like (userId, commentId) will be the same.
+        var updateCommentDto = CommentFaker.GetUpdateCommentDto(seed: 3).Generate();
+        var comment = CommentFaker.GetComment(seed: 3).Generate();
+
+        _commentRepositoryMock.Setup(c => c.Find(It.IsAny<Expression<Func<Comment, bool>>>())).ReturnsAsync(comment);
+        // act
+        var result = await _sut.UpdateCommentAsync(updateCommentDto);
+        // assert
+        _commentRepositoryMock.Verify(c => c.Update(It.IsAny<Comment>()), Times.Never);
+        _unitOfWorkMock.Verify(c => c.SaveAsync(), Times.Never);
+
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(CommentErrors.EditTimeout);
+    }
     #endregion
 }
