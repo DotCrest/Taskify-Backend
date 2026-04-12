@@ -266,5 +266,24 @@ public class CommentServiceTests
             .Should()
             .Be(CommentErrors.NotFound);
     }
+    [Fact]
+    public async Task DeleteCommentAsync_WhenUserWhoDeletingTheCommentIsNotTheOwner_ReturnAccessDenied()
+    {
+        // arrange
+        var comment = CommentFaker.GetComment().Generate();
+        _commentRepositoryMock.Setup(c => c.Find(It.IsAny<Expression<Func<Comment, bool>>>())).ReturnsAsync(comment);
+        // act
+        var result = await _sut.DeleteCommentAsync(comment.Id, userId: "differentUserId");
+        // assert
+        _commentRepositoryMock.Verify(c => c.Delete(It.IsAny<Comment>()), Times.Never);
+        _unitOfWorkMock.Verify(c => c.SaveAsync(), Times.Never);
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(CommentErrors.AccessDenied);
+    }
     #endregion
 }
