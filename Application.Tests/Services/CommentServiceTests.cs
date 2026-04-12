@@ -125,5 +125,24 @@ public class CommentServiceTests
         result.Value.Should().NotBeNull();
         result.Value.TotalRecords.Should().Be(comments.Count);
     }
+    [Fact]
+    public async Task GetCommentsByQuestIdAsync_WhenThereIsNoComments_ReturnsEmptyResponse()
+    {
+        // arrange
+        var queryFilter = CommentFaker.GetFakeQueryFilter().Generate();
+        var emptyCommentList = new List<Comment>();
+
+        _commentRepositoryMock.Setup(c => c.CountAsync(It.IsAny<ISpecification<Comment>>())).ReturnsAsync(0);
+        _commentRepositoryMock.Setup(c => c.FindAll(It.IsAny<ISpecification<Comment>>())).ReturnsAsync(emptyCommentList);
+        // act
+        var result = await _sut.GetCommentsByQuestIdAsync(questId: 1, queryFilter);
+        // assert
+        _commentRepositoryMock.Verify(c => c.CountAsync(It.IsAny<ISpecification<Comment>>()), Times.Once);
+        _commentRepositoryMock.Verify(c => c.FindAll(It.IsAny<ISpecification<Comment>>()), Times.Once);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value.TotalRecords.Should().Be(emptyCommentList.Count);
+    }
     #endregion
 }
