@@ -20,5 +20,7 @@ namespace Application.Shared.Errors
             new Error("Auth.InvalidRole", "Invalid role specified!");
         public static readonly Error InvalidInvitationEmail =
             new Error("Auth.InvalidInvitationEmail", "Email mismatch! You must register with the email the invitation was sent to.");
+        public static readonly Error UnVerifiedUpdatePassword =
+            new Error("Auth.UnVerifiedUpdatePassword", "You must verify your email before updating your password.");
     }
 }
