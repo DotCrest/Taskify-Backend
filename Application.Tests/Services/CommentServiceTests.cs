@@ -1,6 +1,7 @@
 ﻿using Application.MappingProfiles;
 using Application.ServiceAbstractions;
 using Application.Services;
+using Application.Shared.Errors;
 using Application.Tests.Fakers;
 using AutoMapper;
 using Domain.Contracts;
@@ -52,6 +53,31 @@ public class CommentServiceTests
         result.IsSuccess.Should().BeTrue();
         _commentRepositoryMock.Verify(c => c.AddAsync(It.IsAny<Comment>()), Times.Once);
         _unitOfWorkMock.Verify(uow => uow.SaveAsync(), Times.Once);
+    }
+    [Fact]
+    public async Task AddCommentAsync_WhenQuestIsNotFound_ReturnQuestNotFound()
+    {
+        // arrange
+        var addCommentDto = CommentFaker.GetAddCommentDto().Generate();
+
+        // these mocks for the private method (ExternalValidationsSteps)
+        _questServiceMock.Setup(q => q.IsQuestExisted(It.IsAny<int>())).ReturnsAsync(false);
+
+        // act
+        var result = await _sut.AddCommentAsync(addCommentDto);
+        // assert
+
+        _commentRepositoryMock.Verify(c => c.AddAsync(It.IsAny<Comment>()), Times.Never);
+        _unitOfWorkMock.Verify(uow => uow.SaveAsync(), Times.Never);
+
+        result.IsSuccess.Should().BeFalse();
+        result
+            .ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(QuestErrors.NotFound);
     }
     #endregion
 }
