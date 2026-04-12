@@ -1,4 +1,5 @@
-﻿using Application.Dtos;
+﻿using Application.Dtos.AuthenticationDtos;
+using Domain.Constants;
 using FluentValidation;
 
 namespace Application.Validators.AuthenticationValidators;
@@ -23,5 +24,10 @@ public sealed class RegisterDtoValidator : AbstractValidator<RegisterDto>
             .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter")
             .Matches(@"\d").WithMessage("Password must contain at least one digit")
             .Matches(@"[^\da-zA-Z]").WithMessage("Password must contain at least one special character");
+
+        RuleFor(u => u.Role)
+            .NotEmpty().WithMessage("Role is required")
+            .Must(role => role.ToLower() == Role.Admin || role.ToLower() == Role.Member)
+            .WithMessage($"Role must be either '{Role.Admin}' or '{Role.Member}'");
     }
 }

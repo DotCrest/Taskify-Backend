@@ -62,6 +62,9 @@ namespace Infrastructure.Migrations
                     b.Property<int>("QuestId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(128)");
@@ -117,6 +120,9 @@ namespace Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("ReceiverEmail")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -131,7 +137,10 @@ namespace Infrastructure.Migrations
                     b.Property<int?>("SpaceId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Token")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -172,16 +181,14 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("GroupId")
+                    b.Property<int>("Priority")
                         .HasColumnType("int");
 
-                    b.Property<string>("Priority")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("SpaceId")
+                        .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -196,7 +203,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("GroupId");
+                    b.HasIndex("SpaceId");
 
                     b.ToTable("Quests");
                 });
@@ -371,7 +378,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("QuestId");
 
-                    b.ToTable("UserQuest");
+                    b.ToTable("UserQuests");
                 });
 
             modelBuilder.Entity("Domain.Models.VerificationCode", b =>
@@ -675,9 +682,9 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Domain.Models.Group", "Group")
+                    b.HasOne("Domain.Models.Space", "Space")
                         .WithMany("Quests")
-                        .HasForeignKey("GroupId")
+                        .HasForeignKey("SpaceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -685,7 +692,7 @@ namespace Infrastructure.Migrations
 
                     b.Navigation("Category");
 
-                    b.Navigation("Group");
+                    b.Navigation("Space");
                 });
 
             modelBuilder.Entity("Domain.Models.Space", b =>
@@ -886,11 +893,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Quests");
                 });
 
-            modelBuilder.Entity("Domain.Models.Group", b =>
-                {
-                    b.Navigation("Quests");
-                });
-
             modelBuilder.Entity("Domain.Models.Quest", b =>
                 {
                     b.Navigation("Assignees");
@@ -901,6 +903,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("Groups");
 
                     b.Navigation("Invitations");
+
+                    b.Navigation("Quests");
 
                     b.Navigation("SpaceMembers");
                 });

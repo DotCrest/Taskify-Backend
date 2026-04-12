@@ -1,16 +1,12 @@
 ﻿using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Configurations;
 
 public class QuestConfiguration : IEntityTypeConfiguration<Quest>
 {
     public void Configure(EntityTypeBuilder<Quest> builder)
     {
-        var QuestStatusEnumConverter = new EnumToStringConverter<QuestStatusEnum>();
-        var PriorityEnumConverter = new EnumToStringConverter<PriorityEnum>();
-
         builder
             .HasOne(q => q.Category)
             .WithMany(c => c.Quests)
@@ -18,9 +14,9 @@ public class QuestConfiguration : IEntityTypeConfiguration<Quest>
             .OnDelete(DeleteBehavior.NoAction);
 
         builder
-            .HasOne(q => q.Group)
-            .WithMany(g => g.Quests)
-            .HasForeignKey(q => q.GroupId)
+            .HasOne(q => q.Space)
+            .WithMany(s => s.Quests)
+            .HasForeignKey(q => q.SpaceId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder
@@ -33,13 +29,5 @@ public class QuestConfiguration : IEntityTypeConfiguration<Quest>
             .HasMany(q => q.Tags)
             .WithMany(t => t.Quests)
             .UsingEntity(J => J.ToTable("QuestTags"));
-
-        builder
-          .Property(q => q.Status)
-          .HasConversion(QuestStatusEnumConverter);
-
-        builder
-            .Property(q => q.Priority)
-            .HasConversion(PriorityEnumConverter);
     }
 }

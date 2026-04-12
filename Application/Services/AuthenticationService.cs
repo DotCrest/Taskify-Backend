@@ -1,8 +1,10 @@
 ﻿using Application.Common.Errors;
 using Application.Dtos;
+using Application.Dtos.AuthenticationDtos;
 using Application.ServiceAbstractions;
 using Application.Shared;
 using Application.Shared.Errors;
+using Domain.Contracts;
 using Domain.Models;
 using Domain.Options;
 using Microsoft.AspNetCore.Identity;
@@ -16,7 +18,12 @@ using System.Text;
 namespace Application.Services;
 
 public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtOptions> _options,
-                                   PasswordHasher<User> passwordHasher, ICodeVerificationService _codeVerificationService) : IAuthenticationService
+                                   PasswordHasher<User> passwordHasher,
+                                   IUnitOfWork unitOfWork,
+                                   ICodeVerificationService _codeVerificationService,
+                                   IInvitationService invitationService,
+                                   IWorkSpaceService workSpaceService,
+                                   IWorkSpaceMemberService workSpaceMemberService) : IAuthenticationService
 {
     public async Task<Result<AuthResponseDto>> Login(LoginDto loginDto)
     {
@@ -92,7 +99,7 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
             return Result<AuthResponseDto>
                 .Failure(result.Errors.Select(x => new Error(x.Code, x.Description)).ToList());
         }
-        var roles = await _userManager.AddToRoleAsync(user, "User");
+        var roles = await _userManager.AddToRoleAsync(user, registerDto.Role.ToLower());
         var jwtToken = await CreateTokenAsync(user);
         var refreshToken = CreateRefreshToken();
         user.RefeshTokens.Add(refreshToken);
@@ -106,7 +113,7 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
             Username = user.UserName,
             Email = user.Email,
             Message = "User Registered Successfully",
-            Roles = new List<string>() { "User" },
+            Roles = new List<string>() { registerDto.Role },
             RefreshToken = refreshToken.Token,
             RefreshTokenExpiration = refreshToken.ExpiresOn
         };
@@ -193,11 +200,6 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
 
         return Result<BaseToReturnDto>.Success(baseToReturnDto);
     }
-
-
-
-
-
     private RefeshToken CreateRefreshToken()
     {
         var randomNumber = new byte[32];
@@ -238,13 +240,7 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         var user = await _userManager.FindByEmailAsync(forgetPasswordDto.Email);
         if (user is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
-        await _codeVerificationService.SendCode(forgetPasswordDto.Email);
-
-        var baseToReturnDto = new BaseToReturnDto()
-        {
-            IsSuccess = true,
-            Message = "Verification code sent to your email."
-        };
+        var baseToReturnDto = await _codeVerificationService.SendCode(forgetPasswordDto.Email);
         return Result<BaseToReturnDto>.Success(baseToReturnDto);
     }
     public async Task<Result<BaseToReturnDto>> UpdatePasswordAsync(UpdatePasswordDto updatePasswordDto)
@@ -267,6 +263,71 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         return Result<BaseToReturnDto>.Success(baseToReturnDto);
 
     }
-
-
+    public async Task<Result<AuthResponseDto>> RegisterByInvitation(RegisterDto registerDto, string invitationToken)
+    {
+        // get the invitation by the token
+        var invitationResult = await invitationService.GetValidInvitationAsync(invitationToken);
+        if (!invitationResult.IsSuccess)
+            return Result<AuthResponseDto>.Failure(invitationResult.ErrorsList);
+        var invitation = invitationResult.Value!;
+        // validate the invitation email and role with the register Dto
+        if (!string.Equals(invitation.ReceiverEmail, registerDto.Email, StringComparison.OrdinalIgnoreCase))
+            return Result<AuthResponseDto>.Failure(AuthErrors.InvalidInvitationEmail);
+        if (!string.Equals(invitation.ReceiverRole, registerDto.Role, StringComparison.OrdinalIgnoreCase))
+            return Result<AuthResponseDto>.Failure(AuthErrors.InvalidRole);
+        // check if the workspace exists
+        var workspace = await workSpaceService.GetWorkSpaceById(invitation.WorkspaceId);
+        if (workspace is null)
+            return Result<AuthResponseDto>.Failure(WorkspaceErrors.NotFound);
+        // check if the user already exists
+        var user = await _userManager.FindByEmailAsync(registerDto.Email);
+        if (user is not null)
+            return Result<AuthResponseDto>.Failure(AuthErrors.EmailAlreadyExists);
+        // create the user and workspace member
+        var newUser = new User
+        {
+            Id = Guid.NewGuid().ToString(),
+            Email = invitation.ReceiverEmail,
+            UserName = registerDto.UserName,
+            Name = registerDto.Name,
+            JoinedAt = DateTime.UtcNow,
+            EmailConfirmed = true
+        };
+        var workspaceMember = new WorkspaceMember
+        {
+            UserId = newUser.Id,
+            WorkspaceId = invitation.WorkspaceId,
+            Role = invitation.ReceiverRole,
+            JoinedAt = DateTime.UtcNow
+        };
+        // execute all the operations in a transaction
+        await unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var createResult = await _userManager.CreateAsync(newUser, registerDto.Password);
+            if (!createResult.Succeeded)
+                throw new Exception(string.Join(", ", createResult.Errors.Select(e => e.Description)));
+            await _userManager.AddToRoleAsync(newUser, invitation.ReceiverRole.ToLower());
+            await workSpaceMemberService.AddWorkSpaceMemberAsync(workspaceMember);
+            invitationService.UpdateInvitationStatus(invitation, InvitationStatusEnum.Accepted);
+            await unitOfWork.SaveAsync();
+        });
+        // return the response
+        var jwtToken = await CreateTokenAsync(newUser);
+        var refreshToken = CreateRefreshToken();
+        user.RefeshTokens.Add(refreshToken);
+        await _userManager.UpdateAsync(user);
+        var authResponse = new AuthResponseDto()
+        {
+            IsAuthenticated = true,
+            Token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
+            ExpiresOn = jwtToken.ValidTo,
+            Username = newUser.UserName,
+            Email = newUser.Email,
+            Message = "User Registered Successfully",
+            Roles = new List<string>() { invitation.ReceiverRole },
+            RefreshToken = refreshToken.Token,
+            RefreshTokenExpiration = refreshToken.ExpiresOn
+        };
+        return Result<AuthResponseDto>.Success(authResponse);
+    }
 }

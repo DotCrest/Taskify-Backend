@@ -1,7 +1,6 @@
 ﻿using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Infrastructure.Configurations;
 
@@ -9,7 +8,6 @@ public class InvitationConfiguration : IEntityTypeConfiguration<Invitation>
 {
     public void Configure(EntityTypeBuilder<Invitation> builder)
     {
-        var InvitationStatusEnumConverter = new EnumToStringConverter<InvitationStatusEnum>();
 
         builder
             .HasOne(i => i.Sender)
@@ -28,9 +26,5 @@ public class InvitationConfiguration : IEntityTypeConfiguration<Invitation>
             .WithMany(w => w.Invitations)
             .HasForeignKey(i => i.WorkspaceId)
             .OnDelete(DeleteBehavior.NoAction);
-
-        builder
-            .Property(i => i.Status)
-            .HasConversion(InvitationStatusEnumConverter);
     }
 }
