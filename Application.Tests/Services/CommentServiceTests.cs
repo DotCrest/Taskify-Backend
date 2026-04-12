@@ -1,15 +1,17 @@
 ﻿using Application.MappingProfiles;
 using Application.ServiceAbstractions;
 using Application.Services;
+using Application.Tests.Fakers;
 using AutoMapper;
 using Domain.Contracts;
 using Domain.Models;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Application.Tests.Services;
 
-internal class CommentServiceTests
+public class CommentServiceTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IGenericRepository<Comment>> _commentRepositoryMock;
@@ -33,4 +35,23 @@ internal class CommentServiceTests
 
         _sut = new CommentService(_unitOfWorkMock.Object, _mapper, _questServiceMock.Object, _userQuestServiceMock.Object);
     }
+
+    #region AddCommentAsync
+    [Fact]
+    public async Task AddCommentAsync_WithValidData_ReturnsSuccess()
+    {
+        // arrange
+        var AddCommentDto = CommentFaker.GetAddCommentDto().Generate();
+
+        // these mocks for the private method (ExternalValidationsSteps)
+        _questServiceMock.Setup(q => q.IsQuestExisted(It.IsAny<int>())).ReturnsAsync(true);
+        _userQuestServiceMock.Setup(uq => uq.IsUserAssignedToQuest(It.IsAny<string>(), It.IsAny<int>())).ReturnsAsync(true);
+        // act
+        var result = await _sut.AddCommentAsync(AddCommentDto);
+        // assert
+        result.IsSuccess.Should().BeTrue();
+        _commentRepositoryMock.Verify(c => c.AddAsync(It.IsAny<Comment>()), Times.Once);
+        _unitOfWorkMock.Verify(uow => uow.SaveAsync(), Times.Once);
+    }
+    #endregion
 }
