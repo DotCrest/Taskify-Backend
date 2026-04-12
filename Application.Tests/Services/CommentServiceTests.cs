@@ -164,5 +164,26 @@ public class CommentServiceTests
         _unitOfWorkMock.Verify(uow => uow.SaveAsync(), Times.Once);
         result.IsSuccess.Should().BeTrue();
     }
+    [Fact]
+    public async Task UpdateCommentAsync_WhenCommentNotFound_ReturnNotFound()
+    {
+        // arrange
+        var updateCommentDto = CommentFaker.GetUpdateCommentDto().Generate();
+
+        _commentRepositoryMock.Setup(c => c.Find(It.IsAny<Expression<Func<Comment, bool>>>())).ReturnsAsync((Comment?)null);
+        // act
+        var result = await _sut.UpdateCommentAsync(updateCommentDto);
+        // assert
+        _commentRepositoryMock.Verify(c => c.Update(It.IsAny<Comment>()), Times.Never);
+        _unitOfWorkMock.Verify(c => c.SaveAsync(), Times.Never);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(CommentErrors.NotFound);
+    }
     #endregion
 }
