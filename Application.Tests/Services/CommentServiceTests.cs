@@ -247,5 +247,24 @@ public class CommentServiceTests
 
         result.IsSuccess.Should().BeTrue();
     }
+    [Fact]
+    public async Task DeleteCommentAsync_WhenCommentIsNotFound_ReturnNotFound()
+    {
+        // arrange
+        _commentRepositoryMock.Setup(c => c.Find(It.IsAny<Expression<Func<Comment, bool>>>())).ReturnsAsync((Comment?)null);
+        // act
+        var result = await _sut.DeleteCommentAsync(commentId: 1, userId: "userId");
+        //  assert
+        _commentRepositoryMock.Verify(c => c.Delete(It.IsAny<Comment>()), Times.Never);
+        _unitOfWorkMock.Verify(c => c.SaveAsync(), Times.Never);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(CommentErrors.NotFound);
+    }
     #endregion
 }
