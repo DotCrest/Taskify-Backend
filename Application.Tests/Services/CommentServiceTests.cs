@@ -79,5 +79,29 @@ public class CommentServiceTests
             .Should()
             .Be(QuestErrors.NotFound);
     }
+    [Fact]
+    public async Task AddCommentAsync_WhenUserIsNotAssignedToQuest_ReturnsAccessDenied()
+    {
+        // arrange
+        var addCommentDto = CommentFaker.GetAddCommentDto().Generate();
+
+        // these mocks for the private method (ExternalValidationsSteps)
+        _questServiceMock.Setup(q => q.IsQuestExisted(It.IsAny<int>())).ReturnsAsync(true);
+        _userQuestServiceMock.Setup(uq => uq.IsUserAssignedToQuest(It.IsAny<string>(), It.IsAny<int>())).ReturnsAsync(false);
+        // act
+        var result = await _sut.AddCommentAsync(addCommentDto);
+        // assert
+        _commentRepositoryMock.Verify(c => c.AddAsync(It.IsAny<Comment>()), Times.Never);
+        _unitOfWorkMock.Verify(uow => uow.SaveAsync(), Times.Never);
+
+        result.IsSuccess.Should().BeFalse();
+        result
+            .ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(CommentErrors.AccessDenied);
+    }
     #endregion
 }
