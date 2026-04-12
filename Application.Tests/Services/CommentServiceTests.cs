@@ -9,6 +9,7 @@ using Domain.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using System.Linq.Expressions;
 
 namespace Application.Tests.Services;
 
@@ -143,6 +144,25 @@ public class CommentServiceTests
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
         result.Value.TotalRecords.Should().Be(emptyCommentList.Count);
+    }
+    #endregion
+
+    #region UpdateCommentAsync
+    [Fact]
+    public async Task UpdateCommentAsync_WithValidData_ReturnsSuccess()
+    {
+        // arrange
+        // The seed will make sure that the generated UpdateCommentDto and Comment have the same data.
+        var updateCommentDto = CommentFaker.GetUpdateCommentDto(seed: 2).Generate();
+        var comment = CommentFaker.GetComment(seed: 2).Generate();
+
+        _commentRepositoryMock.Setup(c => c.Find(It.IsAny<Expression<Func<Comment, bool>>>())).ReturnsAsync(comment);
+        // act
+        var result = await _sut.UpdateCommentAsync(updateCommentDto);
+        // assert
+        _commentRepositoryMock.Verify(c => c.Update(It.Is<Comment>(comment => comment.Content == updateCommentDto.UserComment)), Times.Once);
+        _unitOfWorkMock.Verify(uow => uow.SaveAsync(), Times.Once);
+        result.IsSuccess.Should().BeTrue();
     }
     #endregion
 }
