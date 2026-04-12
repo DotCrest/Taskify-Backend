@@ -199,4 +199,5 @@ app.MapControllers();
 app.MapHub<CommentHub>("/hub/comments");
 app.UseHangfireDashboard("/hangfire");
 RecurringJob.AddOrUpdate<IInvitationService>("expired-invitations-job", service => service.PeriodicUpdateOfExpiredInvitationsAsync(), Cron.Daily());
+RecurringJob.AddOrUpdate<ICodeVerificationService>("delete-inactive-codes-job", service => service.DeleteInActiveCodes(), Cron.Daily());
 app.Run();

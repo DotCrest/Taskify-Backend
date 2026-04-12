@@ -62,14 +62,25 @@ public class CodeVerificationService(IUnitOfWork unitOfWork,
             logger.LogWarning("Verification code mismatch for email: {Email}", verifyCodeDto.Email);
             return Result<BaseToReturnDto>.Failure(VerificationCodeErrors.InvalidCode);
         }
-        // if valid delete code from db
-        await DeleteCode(codeFromDb);
+        // if valid update IsVerified to true in db
+        codeFromDb.IsVerified = true;
+        await UpdateCode(codeFromDb);
         // return result
         return Result<BaseToReturnDto>.Success(new BaseToReturnDto
         {
             IsSuccess = true,
             Message = "Code verified successfully."
         });
+    }
+    public async Task<bool> IsValidated(string email)
+    {
+        var codeFromDb = await GetCodeByEmail(email);
+        if (codeFromDb != null && codeFromDb.IsVerified)
+        {
+            await DeleteCode(codeFromDb);
+            return true;
+        }
+        return false;
     }
     private async Task<VerificationCode?> GetCodeByEmail(string email)
     {
@@ -92,6 +103,11 @@ public class CodeVerificationService(IUnitOfWork unitOfWork,
     {
         // delete code from db
         verificationCodeRepo.Delete(code);
+        await unitOfWork.SaveAsync();
+    }
+    private async Task UpdateCode(VerificationCode code)
+    {
+        verificationCodeRepo.Update(code);
         await unitOfWork.SaveAsync();
     }
     private async Task<string> CheckForExistedCode(string email)
