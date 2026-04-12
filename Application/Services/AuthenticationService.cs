@@ -248,6 +248,12 @@ public class AuthenticationService(UserManager<User> _userManager, IOptions<JwtO
         var user = await _userManager.FindByEmailAsync(updatePasswordDto.Email);
         if (user is null)
             return Result<BaseToReturnDto>.Failure(AuthErrors.UserNotFound);
+
+        // prevent users from updating their password without verifying the code sent to their email 
+        var isVerified = await _codeVerificationService.IsValidated(updatePasswordDto.Email);
+        if (!isVerified)
+            return Result<BaseToReturnDto>.Failure(AuthErrors.UnVerifiedUpdatePassword);
+
         user.PasswordHash = passwordHasher.HashPassword(user, updatePasswordDto.NewPassword);
         var result = await _userManager.UpdateAsync(user);
         if (!result.Succeeded)
