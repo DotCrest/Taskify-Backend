@@ -104,4 +104,26 @@ public class CommentServiceTests
             .Be(CommentErrors.AccessDenied);
     }
     #endregion
+
+    #region GetCommentsByQuestIdAsync
+    [Fact]
+    public async Task GetCommentsByQuestIdAsync_WhenThereIsComments_ReturnPagedResponse()
+    {
+        // arrange
+        var queryFilter = CommentFaker.GetFakeQueryFilter().Generate();
+        var comments = CommentFaker.GetComment().Generate(5);
+
+        _commentRepositoryMock.Setup(c => c.CountAsync(It.IsAny<ISpecification<Comment>>())).ReturnsAsync(comments.Count);
+        _commentRepositoryMock.Setup(c => c.FindAll(It.IsAny<ISpecification<Comment>>())).ReturnsAsync(comments);
+        // act
+        var result = await _sut.GetCommentsByQuestIdAsync(questId: 1, queryFilter);
+        // assert
+        _commentRepositoryMock.Verify(c => c.CountAsync(It.IsAny<ISpecification<Comment>>()), Times.Once);
+        _commentRepositoryMock.Verify(c => c.FindAll(It.IsAny<ISpecification<Comment>>()), Times.Once);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value.TotalRecords.Should().Be(comments.Count);
+    }
+    #endregion
 }
