@@ -231,4 +231,21 @@ public class CommentServiceTests
             .Be(CommentErrors.EditTimeout);
     }
     #endregion
+
+    #region DeleteCommentAsync
+    [Fact]
+    public async Task DeleteCommentAsync_WithValidData_ReturnsSuccess()
+    {
+        // arrange
+        var comment = CommentFaker.GetComment().Generate();
+        _commentRepositoryMock.Setup(c => c.Find(It.IsAny<Expression<Func<Comment, bool>>>())).ReturnsAsync(comment);
+        // act
+        var result = await _sut.DeleteCommentAsync(comment.Id, comment.UserId);
+        // assert
+        _commentRepositoryMock.Verify(c => c.Delete(It.Is<Comment>(c => c.Id == comment.Id)), Times.Once);
+        _unitOfWorkMock.Verify(u => u.SaveAsync(), Times.Once);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+    #endregion
 }
