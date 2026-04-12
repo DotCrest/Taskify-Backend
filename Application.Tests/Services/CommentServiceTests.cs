@@ -185,5 +185,27 @@ public class CommentServiceTests
             .Should()
             .Be(CommentErrors.NotFound);
     }
+    [Fact]
+    public async Task UpdateCommentAsync_WhenUserWhoEditingTheCommentIsNotTheOwner_ReturnAccessDenied()
+    {
+        // arrange
+        // different seed's will generate different data, so the UserId in the UpdateCommentDto will be different from the UserId in the Comment.
+        var updateCommentDto = CommentFaker.GetUpdateCommentDto(seed: 4).Generate();
+        var comment = CommentFaker.GetComment(seed: 2).Generate();
+
+        _commentRepositoryMock.Setup(c => c.Find(It.IsAny<Expression<Func<Comment, bool>>>())).ReturnsAsync(comment);
+        // act 
+        var result = await _sut.UpdateCommentAsync(updateCommentDto);
+        // assert
+        _commentRepositoryMock.Verify(c => c.Update(It.IsAny<Comment>()), Times.Never);
+        _unitOfWorkMock.Verify(c => c.SaveAsync(), Times.Never);
+
+        result.ErrorsList
+            .Should()
+            .ContainSingle()
+            .Which
+            .Should()
+            .Be(CommentErrors.AccessDenied);
+    }
     #endregion
 }
