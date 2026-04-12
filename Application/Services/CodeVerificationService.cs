@@ -82,6 +82,11 @@ public class CodeVerificationService(IUnitOfWork unitOfWork,
         }
         return false;
     }
+    public async Task DeleteInActiveCodes()
+    {
+        var expirationTime = DateTime.UtcNow.AddMinutes(-10);
+        await verificationCodeRepo.BulkDeleteAsync(x => x.CreatedAt < expirationTime);
+    }
     private async Task<VerificationCode?> GetCodeByEmail(string email)
     {
         return await verificationCodeRepo.Find(vc => vc.Email == email);
