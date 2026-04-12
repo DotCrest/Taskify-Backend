@@ -150,11 +150,11 @@ public class AuthController(IAuthenticationService authenticationService,
         );
     }
 
-    [HttpPost("register-invited")]
+    [HttpPost("register-invited/{InvitationToken}")]
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(IEnumerable<Error>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<AuthResponseDto>> RegisterInvited([FromForm] RegisterDto registerDto, [FromQuery] string InvitationToken)
+    public async Task<ActionResult<AuthResponseDto>> RegisterInvited([FromForm] RegisterDto registerDto, [FromRoute] string InvitationToken)
     {
         // validation
         var validation = await ExecuteWithValidation(registerDtoValidator, registerDto);
